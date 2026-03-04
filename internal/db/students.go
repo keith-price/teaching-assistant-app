@@ -15,9 +15,9 @@ type Student struct {
 }
 
 // CreateStudent adds a new student to the database.
-func CreateStudent(name, level, contactInfo string) (int64, error) {
+func (s *Store) CreateStudent(name, level, contactInfo string) (int64, error) {
 	query := `INSERT INTO students (name, level, contact_info) VALUES (?, ?, ?)`
-	result, err := DB.Exec(query, name, level, contactInfo)
+	result, err := s.db.Exec(query, name, level, contactInfo)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert student: %w", err)
 	}
@@ -31,12 +31,12 @@ func CreateStudent(name, level, contactInfo string) (int64, error) {
 }
 
 // GetStudent retrieves a student by ID.
-func GetStudent(id int64) (*Student, error) {
+func (s *Store) GetStudent(id int64) (*Student, error) {
 	query := `SELECT id, name, level, contact_info, created_at FROM students WHERE id = ?`
-	row := DB.QueryRow(query, id)
+	row := s.db.QueryRow(query, id)
 
-	var s Student
-	err := row.Scan(&s.ID, &s.Name, &s.Level, &s.ContactInfo, &s.CreatedAt)
+	var st Student
+	err := row.Scan(&st.ID, &st.Name, &st.Level, &st.ContactInfo, &st.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil // Not found
@@ -44,13 +44,13 @@ func GetStudent(id int64) (*Student, error) {
 		return nil, fmt.Errorf("failed to scan student: %w", err)
 	}
 
-	return &s, nil
+	return &st, nil
 }
 
 // GetAllStudents retrieves all students.
-func GetAllStudents() ([]Student, error) {
+func (s *Store) GetAllStudents() ([]Student, error) {
 	query := `SELECT id, name, level, contact_info, created_at FROM students ORDER BY name ASC`
-	rows, err := DB.Query(query)
+	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query students: %w", err)
 	}
@@ -58,34 +58,51 @@ func GetAllStudents() ([]Student, error) {
 
 	var students []Student
 	for rows.Next() {
-		var s Student
-		err := rows.Scan(&s.ID, &s.Name, &s.Level, &s.ContactInfo, &s.CreatedAt)
+		var st Student
+		err := rows.Scan(&st.ID, &st.Name, &st.Level, &st.ContactInfo, &st.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan student: %w", err)
 		}
-		students = append(students, s)
+		students = append(students, st)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
 	}
 
 	return students, nil
 }
 
 // UpdateStudent updates an existing student's details.
-func UpdateStudent(id int64, name, level, contactInfo string) error {
+func (s *Store) UpdateStudent(id int64, name, level, contactInfo string) error {
 	query := `UPDATE students SET name = ?, level = ?, contact_info = ? WHERE id = ?`
-	_, err := DB.Exec(query, name, level, contactInfo, id)
+	result, err := s.db.Exec(query, name, level, contactInfo, id)
 	if err != nil {
 		return fmt.Errorf("failed to update student: %w", err)
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected: %w", err)
+	}
+	if n == 0 {
+		return fmt.Errorf("student with id %d not found", id)
 	}
 
 	return nil
 }
 
 // DeleteStudent removes a student by ID.
-func DeleteStudent(id int64) error {
+func (s *Store) DeleteStudent(id int64) error {
 	query := `DELETE FROM students WHERE id = ?`
-	_, err := DB.Exec(query, id)
+	result, err := s.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete student: %w", err)
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected: %w", err)
+	}
+	if n == 0 {
+		return fmt.Errorf("student with id %d not found", id)
 	}
 
 	return nil

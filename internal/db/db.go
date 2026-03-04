@@ -8,28 +8,38 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-var DB *sql.DB
-
-// InitDB initializes the SQLite database connection and creates tables if they don't exist.
-func InitDB(dataSourceName string) error {
-	var err error
-	DB, err = sql.Open("sqlite", dataSourceName)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-
-	if err = DB.Ping(); err != nil {
-		return fmt.Errorf("failed to ping database: %w", err)
-	}
-
-	return createTables()
+type Store struct {
+	db *sql.DB
 }
 
-func createTables() error {
+// NewStore initializes the SQLite database connection and creates tables if they don't exist.
+func NewStore(dataSourceName string) (*Store, error) {
+	conn, err := sql.Open("sqlite", dataSourceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+
+	if err = conn.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	if _, err := conn.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
+	}
+
+	s := &Store{db: conn}
+	if err := s.createTables(); err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
+func (s *Store) createTables() error {
 	schema := `
 	CREATE TABLE IF NOT EXISTS students (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL,
+		name TEXT NOT NULL UNIQUE,
 		level TEXT,
 		contact_info TEXT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -55,7 +65,7 @@ func createTables() error {
 	);
 	`
 
-	_, err := DB.Exec(schema)
+	_, err := s.db.Exec(schema)
 	if err != nil {
 		log.Printf("Error creating tables: %v\n", err)
 		return err
@@ -64,9 +74,10 @@ func createTables() error {
 	return nil
 }
 
-// CloseDB closes the database connection.
-func CloseDB() {
-	if DB != nil {
-		DB.Close()
+// Close closes the database connection.
+func (s *Store) Close() error {
+	if s.db != nil {
+		return s.db.Close()
 	}
+	return nil
 }

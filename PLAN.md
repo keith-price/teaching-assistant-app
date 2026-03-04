@@ -8,17 +8,30 @@ This plan breaks down the project detailed in `AGENTS.md` into actionable microt
 
 ## Phase 1: Foundation & Data Layer (SQLite)
 *Ref: AGENTS.md > Phase 1*
-- [ ] **Task 1.1:** Initialize the Go module (`go mod init`).
-- [ ] **Task 1.2:** Create the directory structure for `/internal/db/`.
-- [ ] **Task 1.3:** **SECURITY STEP 1:** Create `.gitignore` in project root. Add `.env`, `credentials.json`, `token.json`, and `*.db`.
-- [ ] **Task 1.4:** Install SQLite dependency (`go get github.com/mattn/go-sqlite3`).
-- [ ] **Task 1.5:** Design database schema (`students`, `lessons`, `materials` tables).
-- [ ] **Task 1.6:** Implement database connection function.
-- [ ] **Task 1.7:** Implement CRUD operations for `students`.
-- [ ] **Task 1.8:** Implement CRUD operations for `lessons`.
-- [ ] **Task 1.9:** Implement CRUD operations for `materials`.
-- [ ] **Task 1.10:** Write a CLI test script to verify database connectivity and CRUD operations.
-- [ ] **Task 1.11:** **🛑 CHECKPOINT & REVIEW:** Hand off `/internal/db/` to the Senior Dev for review. Implement requested changes before proceeding.
+- [x] **Task 1.1:** Initialize the Go module (`go mod init`).
+- [x] **Task 1.2:** Create the directory structure for `/internal/db/`.
+- [x] **Task 1.3:** **SECURITY STEP 1:** Create `.gitignore` in project root. Add `.env`, `credentials.json`, `token.json`, and `*.db`.
+- [x] **Task 1.4:** Install SQLite dependency (`go get github.com/mattn/go-sqlite3`).
+- [x] **Task 1.5:** Design database schema (`students`, `lessons`, `materials` tables).
+- [x] **Task 1.6:** Implement database connection function.
+- [x] **Task 1.7:** Implement CRUD operations for `students`.
+- [x] **Task 1.8:** Implement CRUD operations for `lessons`.
+- [x] **Task 1.9:** Implement CRUD operations for `materials`.
+- [x] **Task 1.10:** Write a CLI test script to verify database connectivity and CRUD operations.
+- [x] **Task 1.11:** **🛑 CHECKPOINT & REVIEW:** Hand off `/internal/db/` to the Senior Dev for review. Implement requested changes before proceeding.
+
+> **Junior Dev Handoff Note (Phase 1 Complete):**
+> Phase 1 is fully completed and all code review feedback from `reviews/TASK_1_FEEDBACK.md` has been successfully implemented. 
+> Key changes made during review:
+> - Removed global `DB` variable; introduced `Store` struct for better testability and concurrency.
+> - Added missing `rows.Err()` checks after all iterations.
+> - Enabled `PRAGMA foreign_keys = ON` for SQLite.
+> - Added `RowsAffected()` checks on all UPDATE/DELETE queries.
+> - Converted `ToggleVocabSent` to a true boolean toggle.
+> - Added `GetLessonsByDateRange` preemptively for Phase 4 split-pane support.
+> - Replaced the CLI test script with idiomatic Go tests in `internal/db/db_test.go`.
+> 
+> **Next steps:** Start working on **Phase 2: Google Calendar Fetcher**, beginning with Task 2.1.
 
 ---
 
