@@ -37,13 +37,25 @@ This plan breaks down the project detailed in `AGENTS.md` into actionable microt
 
 ## Phase 2: Google Calendar Fetcher
 *Ref: AGENTS.md > Phase 2*
-- [ ] **Task 2.1:** Create `/internal/calendar/` directory.
-- [ ] **Task 2.2:** Install Google Calendar Go SDK dependencies.
-- [ ] **Task 2.3:** **SECURITY PAUSE:** Stop and prompt user to download `credentials.json`, place it in the root, and confirm it's git-ignored. *Wait for confirmation.*
-- [ ] **Task 2.4:** Implement OAuth2 authentication flow for Google Calendar.
-- [ ] **Task 2.5:** Implement event fetching logic for "Today" and "Tomorrow" filtering by a specific keyword.
-- [ ] **Task 2.6:** **Constraint Check:** Ensure all fetched events are strictly parsed and converted to WIB (Western Indonesian Time).
-- [ ] **Task 2.7:** **🛑 CHECKPOINT & REVIEW:** Hand off `/internal/calendar/` to the Senior Dev for review. Implement requested changes before proceeding.
+- [x] **Task 2.1:** Create `/internal/calendar/` directory.
+- [x] **Task 2.2:** Install Google Calendar Go SDK dependencies.
+- [x] **Task 2.3:** **SECURITY PAUSE:** Stop and prompt user to download `credentials.json`, place it in the `config/` directory, and confirm it's git-ignored. *Wait for confirmation.*
+- [x] **Task 2.4:** Implement OAuth2 authentication flow for Google Calendar.
+- [x] **Task 2.5:** Implement event fetching logic for "Today" and "Tomorrow" filtering by a specific keyword.
+- [x] **Task 2.6:** **Constraint Check:** Ensure all fetched events are strictly parsed and converted to WIB (Western Indonesian Time).
+- [x] **Task 2.7:** **🛑 CHECKPOINT & REVIEW:** Hand off `/internal/calendar/` to the Senior Dev for review. Implement requested changes before proceeding.
+
+> **Junior Dev Handoff Note (Phase 2 Complete):**
+> Phase 2 is fully completed and all code review feedback from `reviews/TASK_2_FEEDBACK.md` has been successfully implemented. 
+> Key changes made during review:
+> - Modified error handling in `parseEventTime` loops to return errors instead of silently skipping events.
+> - Added `.MaxResults(100)` to the Google Calendar API query to ensure explicit limits.
+> - Updated `PLAN.md` references from project root to the `config/` directory for `credentials.json`.
+> - Created an `EventFetcher` interface inside `calendar.go` to make `FetchEvents` mockable for future tests.
+> - Documented the acceptable use of a static state token for local OAuth.
+> - Removed a TUI-breaking `fmt.Printf` log from the token-saving logic.
+> 
+> **Next steps:** Start working on **Phase 3: AI & Clipboard Pipeline**, beginning with Task 3.1.
 
 ---
 

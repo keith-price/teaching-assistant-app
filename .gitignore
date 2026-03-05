@@ -2,8 +2,8 @@
 .env
 
 # Google API Credentials
-credentials.json
-token.json
+config/credentials.json
+config/token.json
 
 # Local SQLite databases
 *.db
