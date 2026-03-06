@@ -179,6 +179,15 @@ _Ref: AGENTS.md > Phase 4_
 >
 > **Next steps:** Ready for **Phase 5: The WhatsApp Daemon** (Task 5.1). Before starting Phase 5, Keith should delete `config/token.json` and re-run `go run cmd/auth/main.go` to authorize both Calendar and Drive scopes.
 
+> **Junior Dev Handoff Note (Worksheet Split & Google Docs Upload Bug Fixes Complete):**
+> I have successfully diagnosed and fixed the bugs detailed in `TO-DO-SPLIT-AND-GDOCS.md`:
+> 
+> - **Split Issue:** Gemini was occasionally wrapping responses in markdown code fences (` ```markdown `). I added a preprocessing step in `splitResponse` (`internal/ai/ai.go`) to strip these wrapping fences before applying the delimiter extraction. I also ensured the fallback extraction properly strips the `[BEGIN STUDENT WORKSHEET]` delimiter if present.
+> - **Google Docs Conversion:** Modified `UploadFile` in `internal/drive/drive.go` to strip the `.md` extension and set the `MimeType` to `application/vnd.google-apps.document`. This guarantees Google Drive automatically converts the markdown content into native, editable Google Docs upon upload.
+> - **Testing:** Added new test cases in `internal/ai/ai_test.go` to cover fenced delimiters, bold delimiters, and fallback behaviors. All tests pass and the project builds cleanly.
+> 
+> **Next steps:** Handing off `internal/ai/ai.go`, `internal/ai/ai_test.go`, and `internal/drive/drive.go` to the Senior Dev for review before we proceed to Phase 5.
+
 ---
 
 ## Phase 5: The WhatsApp Daemon

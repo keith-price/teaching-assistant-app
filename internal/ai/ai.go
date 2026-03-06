@@ -59,6 +59,24 @@ func constructPrompt(level, lessonTime, lessonType, sourceText, lessonTitle stri
 // using the prompt-defined delimiters. It tries multiple delimiter variants to handle
 // inconsistent LLM formatting.
 func splitResponse(fullResponse string) (worksheet string, teacherKey string, err error) {
+	// Strip wrapping markdown code fences if present
+	cleaned := fullResponse
+	cleaned = strings.TrimSpace(cleaned)
+	if strings.HasPrefix(cleaned, "```") {
+		// Remove opening fence (e.g., ```markdown\n)
+		firstNewline := strings.Index(cleaned, "\n")
+		if firstNewline != -1 {
+			cleaned = cleaned[firstNewline+1:]
+		}
+		// Remove closing fence
+		if strings.HasSuffix(strings.TrimSpace(cleaned), "```") {
+			cleaned = strings.TrimSpace(cleaned)
+			cleaned = cleaned[:len(cleaned)-3]
+			cleaned = strings.TrimSpace(cleaned)
+		}
+	}
+	fullResponse = cleaned
+
 	// Try multiple delimiter variants — Gemini sometimes wraps them in markdown formatting
 	endStudentDelimiters := []string{
 		"[END STUDENT WORKSHEET]",
@@ -86,11 +104,21 @@ func splitResponse(fullResponse string) (worksheet string, teacherKey string, er
 		})
 		if beginTeacherIdx != -1 {
 			worksheet = strings.TrimSpace(fullResponse[:beginTeacherIdx])
+			// Also strip a leading [BEGIN STUDENT WORKSHEET] if present
+			for _, prefix := range []string{"[BEGIN STUDENT WORKSHEET]", "**[BEGIN STUDENT WORKSHEET]**", "`[BEGIN STUDENT WORKSHEET]`"} {
+				worksheet = strings.TrimPrefix(worksheet, prefix)
+				worksheet = strings.TrimSpace(worksheet)
+			}
 			teacherKey = extractTeacherKey(fullResponse[beginTeacherIdx:])
 			return worksheet, teacherKey, nil
 		}
 		// No delimiters at all — return the whole response as the worksheet
-		return strings.TrimSpace(fullResponse), "", nil
+		worksheet = strings.TrimSpace(fullResponse)
+		for _, prefix := range []string{"[BEGIN STUDENT WORKSHEET]", "**[BEGIN STUDENT WORKSHEET]**", "`[BEGIN STUDENT WORKSHEET]`"} {
+			worksheet = strings.TrimPrefix(worksheet, prefix)
+			worksheet = strings.TrimSpace(worksheet)
+		}
+		return worksheet, "", nil
 	}
 
 	worksheet = strings.TrimSpace(fullResponse[:endStudentIdx])

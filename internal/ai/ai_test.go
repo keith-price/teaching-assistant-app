@@ -62,6 +62,51 @@ This is the teacher key
 	if tkMissing != "" {
 		t.Errorf("Expected fallback teacher key to be empty, got: %s", tkMissing)
 	}
+
+	// Test with markdown code fence wrapping
+	fencedResp := "```markdown\n[BEGIN STUDENT WORKSHEET]\nWorksheet content\n[END STUDENT WORKSHEET]\n[BEGIN TEACHER KEY]\nKey content\n[END TEACHER KEY]\n```"
+	wsFenced, tkFenced, errFenced := splitResponse(fencedResp)
+	if errFenced != nil {
+		t.Errorf("Unexpected error for fenced response: %v", errFenced)
+	}
+	if !strings.Contains(wsFenced, "Worksheet content") {
+		t.Errorf("Expected worksheet content in fenced response, got: %s", wsFenced)
+	}
+	if strings.Contains(wsFenced, "```") {
+		t.Errorf("Expected fences to be stripped from worksheet in fenced response, got: %s", wsFenced)
+	}
+	if !strings.Contains(tkFenced, "Key content") {
+		t.Errorf("Expected teacher key in fenced response, got: %s", tkFenced)
+	}
+	if strings.Contains(tkFenced, "```") {
+		t.Errorf("Expected fences to be stripped from teacher key in fenced response, got: %s", tkFenced)
+	}
+
+	// Test with bold-wrapped delimiters
+	boldResp := "**[BEGIN STUDENT WORKSHEET]**\nBold worksheet\n**[END STUDENT WORKSHEET]**\n**[BEGIN TEACHER KEY]**\nBold key\n**[END TEACHER KEY]**"
+	wsBold, tkBold, errBold := splitResponse(boldResp)
+	if errBold != nil {
+		t.Errorf("Unexpected error for bold response: %v", errBold)
+	}
+	if !strings.Contains(wsBold, "Bold worksheet") {
+		t.Errorf("Expected worksheet content in bold response, got: %s", wsBold)
+	}
+	if !strings.Contains(tkBold, "Bold key") {
+		t.Errorf("Expected teacher key in bold response, got: %s", tkBold)
+	}
+
+	// Test fallback: [BEGIN TEACHER KEY] present but [END STUDENT WORKSHEET] missing
+	noEndResp := "Worksheet content\n[BEGIN TEACHER KEY]\nTeacher content\n[END TEACHER KEY]"
+	wsNoEnd, tkNoEnd, errNoEnd := splitResponse(noEndResp)
+	if errNoEnd != nil {
+		t.Errorf("Unexpected error: %v", errNoEnd)
+	}
+	if !strings.Contains(wsNoEnd, "Worksheet content") {
+		t.Errorf("Expected worksheet content, got: %s", wsNoEnd)
+	}
+	if !strings.Contains(tkNoEnd, "Teacher content") {
+		t.Errorf("Expected teacher key content, got: %s", tkNoEnd)
+	}
 }
 
 func TestSaveDocuments(t *testing.T) {

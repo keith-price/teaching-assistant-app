@@ -63,11 +63,14 @@ func (c *Client) FindFolder(ctx context.Context, parentID, name string) (*Folder
 	return &Folder{ID: r.Files[0].Id, Name: r.Files[0].Name}, nil
 }
 
-// UploadFile uploads a markdown file to the specified Drive folder.
+// UploadFile uploads a markdown file to the specified Drive folder and converts it to a Google Doc.
 func (c *Client) UploadFile(ctx context.Context, folderID, filename, content string) error {
+	// Strip .md extension for Google Docs — they don't need file extensions
+	docName := strings.TrimSuffix(filename, ".md")
+
 	f := &drive.File{
-		Name:     filename,
-		MimeType: "text/markdown",
+		Name:     docName,
+		MimeType: "application/vnd.google-apps.document", // Google Docs native format
 		Parents:  []string{folderID},
 	}
 	_, err := c.srv.Files.Create(f).Media(strings.NewReader(content)).Do()
