@@ -187,6 +187,16 @@ _Ref: AGENTS.md > Phase 4_
 > - **Testing:** Added new test cases in `internal/ai/ai_test.go` to cover fenced delimiters, bold delimiters, and fallback behaviors. All tests pass and the project builds cleanly.
 > 
 > **Next steps:** Handing off `internal/ai/ai.go`, `internal/ai/ai_test.go`, and `internal/drive/drive.go` to the Senior Dev for review before we proceed to Phase 5.
+> 
+> **Junior Dev Handoff Note (Markdown to Google Docs Rich Text Conversion):**
+> Implemented the changes outlined in `TO-DO-GDOCS-FORMAT.md` to ensure worksheets uploaded to Google Drive are properly formatted as rich text.
+> 
+> - **Dependency:** Added `github.com/gomarkdown/markdown` to handle robust in-memory Markdown-to-HTML conversion.
+> - **Logic Update:** Modified `UploadFile` in `internal/drive/drive.go` to convert the Markdown `content` to HTML bytes before upload.
+> - **API Integration:** Passed the HTML byte stream to the Google Drive `Media()` API and explicitly set the content type using `googleapi.ContentType("text/html")` to force the conversion.
+> - **Verification:** The application builds cleanly and `go test ./internal/drive/ -v` passes.
+> 
+> **Next steps:** Keith, please run the app, generate a new worksheet, upload it to Drive, and verify that it opens as a formatted Google Doc (with bold text, headers, etc.). Once confirmed, please pass `internal/drive/drive.go` back to the Senior Dev for final review.
 
 ---
 

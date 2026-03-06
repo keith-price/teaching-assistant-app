@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -55,20 +56,24 @@ func constructPrompt(level, lessonTime, lessonType, sourceText, lessonTitle stri
 	)
 }
 
+// Precompile regexes for robust matching
+var (
+	endStudentRegex   = regexp.MustCompile(`(?i)(?:#|\*|_|-|\s)*\[END STUDENT WORKSHEET\](?:#|\*|_|-|\s)*`)
+	beginTeacherRegex = regexp.MustCompile(`(?i)(?:#|\*|_|-|\s)*\[BEGIN TEACHER KEY\](?:#|\*|_|-|\s)*`)
+	endTeacherRegex   = regexp.MustCompile(`(?i)(?:#|\*|_|-|\s)*\[END TEACHER KEY\](?:#|\*|_|-|\s)*`)
+	beginStudentRegex = regexp.MustCompile(`(?i)(?:#|\*|_|-|\s)*\[BEGIN STUDENT WORKSHEET\](?:#|\*|_|-|\s)*`)
+)
+
 // splitResponse splits a Gemini response into the student worksheet and teacher's key
-// using the prompt-defined delimiters. It tries multiple delimiter variants to handle
-// inconsistent LLM formatting.
+// using the prompt-defined delimiters. It uses regex to handle inconsistent LLM formatting.
 func splitResponse(fullResponse string) (worksheet string, teacherKey string, err error) {
 	// Strip wrapping markdown code fences if present
-	cleaned := fullResponse
-	cleaned = strings.TrimSpace(cleaned)
+	cleaned := strings.TrimSpace(fullResponse)
 	if strings.HasPrefix(cleaned, "```") {
-		// Remove opening fence (e.g., ```markdown\n)
 		firstNewline := strings.Index(cleaned, "\n")
 		if firstNewline != -1 {
 			cleaned = cleaned[firstNewline+1:]
 		}
-		// Remove closing fence
 		if strings.HasSuffix(strings.TrimSpace(cleaned), "```") {
 			cleaned = strings.TrimSpace(cleaned)
 			cleaned = cleaned[:len(cleaned)-3]
@@ -77,102 +82,47 @@ func splitResponse(fullResponse string) (worksheet string, teacherKey string, er
 	}
 	fullResponse = cleaned
 
-	// Try multiple delimiter variants — Gemini sometimes wraps them in markdown formatting
-	endStudentDelimiters := []string{
-		"[END STUDENT WORKSHEET]",
-		"**[END STUDENT WORKSHEET]**",
-		"`[END STUDENT WORKSHEET]`",
-	}
+	endStudentMatch := endStudentRegex.FindStringIndex(fullResponse)
 
-	endStudentIdx := -1
-	endStudentLen := 0
-	for _, d := range endStudentDelimiters {
-		idx := strings.Index(fullResponse, d)
-		if idx != -1 {
-			endStudentIdx = idx
-			endStudentLen = len(d)
-			break
-		}
-	}
+	if endStudentMatch == nil {
+		// If no [END STUDENT WORKSHEET] delimiter found, try splitting on [BEGIN TEACHER KEY] instead
+		beginTeacherMatch := beginTeacherRegex.FindStringIndex(fullResponse)
+		if beginTeacherMatch != nil {
+			worksheet = strings.TrimSpace(fullResponse[:beginTeacherMatch[0]])
+			worksheet = beginStudentRegex.ReplaceAllString(worksheet, "")
 
-	// If no end-student delimiter found, try splitting on the teacher key start instead
-	if endStudentIdx == -1 {
-		beginTeacherIdx := findDelimiter(fullResponse, []string{
-			"[BEGIN TEACHER KEY]",
-			"**[BEGIN TEACHER KEY]**",
-			"`[BEGIN TEACHER KEY]`",
-		})
-		if beginTeacherIdx != -1 {
-			worksheet = strings.TrimSpace(fullResponse[:beginTeacherIdx])
-			// Also strip a leading [BEGIN STUDENT WORKSHEET] if present
-			for _, prefix := range []string{"[BEGIN STUDENT WORKSHEET]", "**[BEGIN STUDENT WORKSHEET]**", "`[BEGIN STUDENT WORKSHEET]`"} {
-				worksheet = strings.TrimPrefix(worksheet, prefix)
-				worksheet = strings.TrimSpace(worksheet)
-			}
-			teacherKey = extractTeacherKey(fullResponse[beginTeacherIdx:])
-			return worksheet, teacherKey, nil
+			teacherKey = extractTeacherKey(fullResponse[beginTeacherMatch[0]:])
+			return strings.TrimSpace(worksheet), teacherKey, nil
 		}
+
 		// No delimiters at all — return the whole response as the worksheet
-		worksheet = strings.TrimSpace(fullResponse)
-		for _, prefix := range []string{"[BEGIN STUDENT WORKSHEET]", "**[BEGIN STUDENT WORKSHEET]**", "`[BEGIN STUDENT WORKSHEET]`"} {
-			worksheet = strings.TrimPrefix(worksheet, prefix)
-			worksheet = strings.TrimSpace(worksheet)
-		}
-		return worksheet, "", nil
+		worksheet = beginStudentRegex.ReplaceAllString(fullResponse, "")
+		return strings.TrimSpace(worksheet), "", nil
 	}
 
-	worksheet = strings.TrimSpace(fullResponse[:endStudentIdx])
-	// Also strip a leading [BEGIN STUDENT WORKSHEET] if present
-	for _, prefix := range []string{"[BEGIN STUDENT WORKSHEET]", "**[BEGIN STUDENT WORKSHEET]**", "`[BEGIN STUDENT WORKSHEET]`"} {
-		worksheet = strings.TrimPrefix(worksheet, prefix)
-		worksheet = strings.TrimSpace(worksheet)
-	}
+	worksheet = strings.TrimSpace(fullResponse[:endStudentMatch[0]])
+	worksheet = beginStudentRegex.ReplaceAllString(worksheet, "")
 
-	remaining := fullResponse[endStudentIdx+endStudentLen:]
+	remaining := fullResponse[endStudentMatch[1]:]
 	teacherKey = extractTeacherKey(remaining)
 
-	return worksheet, teacherKey, nil
-}
-
-// findDelimiter searches for any of the given delimiter variants and returns the index of the first match.
-func findDelimiter(s string, delimiters []string) int {
-	for _, d := range delimiters {
-		idx := strings.Index(s, d)
-		if idx != -1 {
-			return idx
-		}
-	}
-	return -1
+	return strings.TrimSpace(worksheet), teacherKey, nil
 }
 
 // extractTeacherKey extracts the teacher key content from text that starts at or after
 // a [BEGIN TEACHER KEY] delimiter.
 func extractTeacherKey(s string) string {
-	beginDelimiters := []string{"[BEGIN TEACHER KEY]", "**[BEGIN TEACHER KEY]**", "`[BEGIN TEACHER KEY]`"}
-	endDelimiters := []string{"[END TEACHER KEY]", "**[END TEACHER KEY]**", "`[END TEACHER KEY]`"}
+	beginMatch := beginTeacherRegex.FindStringIndex(s)
 
-	beginIdx := -1
-	beginLen := 0
-	for _, d := range beginDelimiters {
-		idx := strings.Index(s, d)
-		if idx != -1 {
-			beginIdx = idx
-			beginLen = len(d)
-			break
-		}
-	}
-
-	if beginIdx == -1 {
+	if beginMatch == nil {
 		return ""
 	}
 
-	content := s[beginIdx+beginLen:]
+	content := s[beginMatch[1]:]
 
-	for _, d := range endDelimiters {
-		idx := strings.Index(content, d)
-		if idx != -1 {
-			return strings.TrimSpace(content[:idx])
-		}
+	endMatch := endTeacherRegex.FindStringIndex(content)
+	if endMatch != nil {
+		return strings.TrimSpace(content[:endMatch[0]])
 	}
 
 	return strings.TrimSpace(content)
@@ -197,6 +147,9 @@ func (g *Generator) GenerateWorksheet(ctx context.Context, level, lessonTime, le
 	if text == "" {
 		return "", "", fmt.Errorf("received empty text from Gemini API")
 	}
+
+	// DEBUG: dump raw response to disk so we can see why it's not splitting
+	os.WriteFile("debug_split.txt", []byte(text), 0644)
 
 	ws, tk, _ := splitResponse(text)
 	// splitResponse never returns a fatal error — it always returns usable content

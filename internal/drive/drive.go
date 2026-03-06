@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gomarkdown/markdown"
 	"google.golang.org/api/drive/v3"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 )
 
@@ -68,12 +70,34 @@ func (c *Client) UploadFile(ctx context.Context, folderID, filename, content str
 	// Strip .md extension for Google Docs — they don't need file extensions
 	docName := strings.TrimSuffix(filename, ".md")
 
+	// Convert markdown to HTML so Drive correctly renders rich text formatting
+	rawHTML := markdown.ToHTML([]byte(content), nil, nil)
+
+	// Wrap in HTML with basic CSS to ensure Google Docs applies proper spacing
+	styledHTML := fmt.Sprintf(`
+<html>
+<head>
+	<style>
+		:root { font-size: 11pt; }
+		p { margin-bottom: 12pt; line-height: 1.5; }
+		h1 { margin-top: 24pt; margin-bottom: 6pt; font-size: 20pt; }
+		h2 { margin-top: 18pt; margin-bottom: 6pt; font-size: 16pt; }
+		h3 { margin-top: 14pt; margin-bottom: 4pt; font-size: 14pt; }
+		ul, ol { margin-top: 6pt; margin-bottom: 12pt; }
+		li { margin-bottom: 4pt; line-height: 1.5; }
+	</style>
+</head>
+<body>
+%s
+</body>
+</html>`, string(rawHTML))
+
 	f := &drive.File{
 		Name:     docName,
 		MimeType: "application/vnd.google-apps.document", // Google Docs native format
 		Parents:  []string{folderID},
 	}
-	_, err := c.srv.Files.Create(f).Media(strings.NewReader(content)).Do()
+	_, err := c.srv.Files.Create(f).Media(strings.NewReader(styledHTML), googleapi.ContentType("text/html")).Do()
 	if err != nil {
 		return fmt.Errorf("unable to upload file: %w", err)
 	}
@@ -93,4 +117,3 @@ func (c *Client) CreateFolder(ctx context.Context, parentID, name string) (*Fold
 	}
 	return &Folder{ID: created.Id, Name: created.Name}, nil
 }
-
