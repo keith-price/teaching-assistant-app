@@ -20,6 +20,7 @@
 ## 🔴 Critical (Must Fix)
 
 ### 1. System prompt should use `genai.SystemInstruction`, not prompt concatenation
+
 **File:** `ai.go:84-89`
 
 The system prompt is currently concatenated into the user prompt:
@@ -44,6 +45,7 @@ This properly separates the system instruction channel from the user content cha
 ---
 
 ### 2. `PROMPT.md` filename casing — `//go:embed` references `prompt.md` but file is `PROMPT.md`
+
 **File:** `ai.go:16`
 
 The embed directive says:
@@ -56,6 +58,7 @@ var SystemPrompt string
 But the file in the directory listing earlier showed `PROMPT.md` (uppercase). On Linux (and in CI), Go's `embed` is **case-sensitive** — this will fail to compile. It works on Windows only because the filesystem is case-insensitive.
 
 **Requested change:** Either:
+
 - (a) **Rename the file** to `prompt.md` (lowercase) to match the directive, OR
 - (b) **Change the directive** to `//go:embed PROMPT.md`
 
@@ -66,11 +69,13 @@ Option (a) is preferred — lowercase filenames are the Go convention for non-ex
 ## 🟡 Important (Should Fix)
 
 ### 3. `SaveWorksheet` overwrites files without warning
+
 **File:** `ai.go:111-115`
 
 If the teacher generates a worksheet for `"Bob Smith"` twice on the same day, the second call silently overwrites the first. This could cause data loss.
 
 **Requested change:** Either:
+
 - (a) Check if the file exists first and append a counter suffix (e.g. `2026-03-06_Bob_Smith_lesson_2.md`), OR
 - (b) Use a timestamp with time component (e.g. `2026-03-06_1430_Bob_Smith_lesson.md`)
 
@@ -83,6 +88,7 @@ dateStr := time.Now().Format("2006-01-02_1504")
 ---
 
 ### 4. `SaveWorksheet` uses a relative path — fragile when called from different working directories
+
 **File:** `ai.go:104`
 
 ```go
@@ -105,6 +111,7 @@ This also makes the function testable with temp directories (see item #6).
 ---
 
 ### 5. `constructPrompt` doesn't include lesson time or lesson type
+
 **File:** `ai.go:71-73`
 
 The `PROMPT.md` system prompt explicitly expects four input parameters: `TARGET LEVEL`, `LESSON TIME`, `LESSON TYPE`, and `TOPIC/SOURCE`. But `constructPrompt` only sends `studentName`, `studentLevel`, and `transcript`. Lesson time and lesson type are missing.
@@ -125,9 +132,11 @@ Update `GenerateWorksheet` and `GenerateAndSaveWorksheet` signatures accordingly
 ---
 
 ### 6. `TestSaveWorksheet` writes to the real `worksheets/` directory
+
 **File:** `ai_test.go:68-94`
 
 The test creates a real file in `worksheets/` and only cleans up the file — not the directory. This:
+
 - Pollutes the project directory with a `worksheets/` folder during test runs
 - Could conflict with other tests in CI
 - Doesn't test the `MkdirAll` path properly
@@ -149,6 +158,7 @@ This is automatically cleaned up by the test framework.
 ## 🟢 Minor / Housekeeping
 
 ### 7. `genai.Text()` return value — verify `result.Text()` isn't deprecated
+
 **File:** `ai.go:89-94`
 
 Verify that `result.Text()` is the correct accessor for the current SDK version (`google.golang.org/genai v1.49.0`). Some versions use `result.Candidates[0].Content.Parts[0]` instead. If `Text()` is a convenience method that panics on empty results, the nil/empty check on line 95 may not catch all edge cases.
@@ -165,6 +175,7 @@ text := result.Text()
 ---
 
 ### 8. Model name should be a configurable constant
+
 **File:** `ai.go:89`
 
 `"gemini-2.0-flash"` is hardcoded in the function body. When Gemini updates models, this requires editing function logic.
@@ -197,6 +208,7 @@ Or accept it as a `Generator` field set during construction.
 ## Review Process Log
 
 ### Step 1 — Initial Review (2026-03-06)
+
 **Reviewer:** Senior Dev (AI)
 **Files reviewed:** `internal/ai/ai.go`, `internal/ai/ai_test.go`, `internal/ai/PROMPT.md`
 
@@ -219,6 +231,7 @@ PASS
 - Handed feedback report to Junior Dev for implementation.
 
 ### Step 2 — Verification of Review Fixes (2026-03-06)
+
 **Reviewer:** Senior Dev (AI)
 **Files reviewed:** `internal/ai/ai.go`, `internal/ai/ai_test.go`, `internal/ai/prompt.md`
 
