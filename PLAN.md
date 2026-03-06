@@ -61,15 +61,40 @@ This plan breaks down the project detailed in `AGENTS.md` into actionable microt
 
 ## Phase 3: AI & Clipboard Pipeline
 *Ref: AGENTS.md > Phase 3*
-- [ ] **Task 3.1:** Create `/internal/ai/` directory.
-- [ ] **Task 3.2:** Install dependencies (`github.com/joho/godotenv`, `github.com/atotto/clipboard`, Official Google GenAI SDK for Go).
-- [ ] **Task 3.3:** **SECURITY PAUSE:** Implement `godotenv` loading. Stop and prompt user to create `.env` with `GEMINI_API_KEY`, and confirm it's git-ignored. *Wait for confirmation.*
-- [ ] **Task 3.4:** Implement clipboard reading using `atotto/clipboard`.
-- [ ] **Task 3.5:** Implement Gemini API client initialization.
-- [ ] **Task 3.6:** Construct Gemini API prompt combining System Prompt, lesson metadata, and clipboard transcript.
-- [ ] **Task 3.7:** Implement API call to Gemini and parse the response.
-- [ ] **Task 3.8:** Implement saving the API response as a `.md` file in a local `/worksheets/` directory. Ensure directory exists.
-- [ ] **Task 3.9:** **🛑 CHECKPOINT & REVIEW:** Hand off `/internal/ai/` to the Senior Dev for review. Implement requested changes before proceeding.
+- [x] **Task 3.1:** Create `/internal/ai/` directory.
+- [x] **Task 3.2:** Install dependencies (`github.com/joho/godotenv`, `github.com/atotto/clipboard`, Official Google GenAI SDK for Go).
+- [x] **Task 3.3:** **SECURITY PAUSE:** Implement `godotenv` loading. Stop and prompt user to create `.env` with `GEMINI_API_KEY`, and confirm it's git-ignored. *Wait for confirmation.*
+- [x] **Task 3.4:** Implement clipboard reading using `atotto/clipboard`.
+- [x] **Task 3.5:** Implement Gemini API client initialization.
+- [x] **Task 3.6:** Construct Gemini API prompt combining System Prompt, lesson metadata, and clipboard transcript.
+- [x] **Task 3.7:** Implement API call to Gemini and parse the response.
+- [x] **Task 3.8:** Implement saving the API response as a `.md` file in a local `/worksheets/` directory. Ensure directory exists. **Add `/worksheets/` to `.gitignore`** — these files contain private student data and must never be committed.
+
+> _[Decision — 2026-03-06] Confirmed with Keith: the `/worksheets/` directory is git-ignored. Generated worksheets contain private student lesson transcripts and personalised AI content. They must remain local-only._
+- [x] **Task 3.9:** **🛑 CHECKPOINT & REVIEW:** Hand off `/internal/ai/` to the Senior Dev for review. Implement requested changes before proceeding.
+
+> **Junior Dev Handoff Note (Phase 3 Complete):**
+> Phase 3 development is complete. 
+> Key implementation details:
+> - Created `internal/ai/ai.go` using a struct-based design (`Generator`).
+> - Implemented a `ClipboardReader` interface to ensure the clipboard reading is fully testable and mockable.
+> - Handled empty clipboard states explicitly (returning an error instead of passing empty text to Gemini).
+> - Created a centralized `SystemPrompt` constant to cleanly build the request to the official Google GenAI Go SDK.
+> - Auto-creates the `/worksheets/` directory and securely writes the generated markdown files. Added `/worksheets/` to `.gitignore` as requested.
+> - Tested successfully via `go test ./internal/ai/` utilizing a mock clipboard.
+> 
+> **Junior Dev Handoff Note (Phase 3 Review Fixes Complete):**
+> All code review feedback from `reviews/TASK_3_FEEDBACK.md` has been successfully implemented.
+> Key changes made during review:
+> - Migrated from prompt concatenation to using `SystemInstruction: genai.NewContentFromText(SystemPrompt, genai.RoleUser)`.
+> - Kept the `prompt.md` filename casing consistent to avoid Linux/CI `go:embed` errors.
+> - Prevented `SaveWorksheet` from overwriting same-day duplicates by appending a time component `2006-01-02_1504` to the filename.
+> - Required `baseDir` in `SaveWorksheet` avoiding fragile relative directory creation and used `t.TempDir()` in tests to prevent pollution.
+> - Added missing `lessonTime` and `lessonType` into `constructPrompt` matching the system prompt parameters.
+> - Made `DefaultModel = "gemini-2.5-flash"` configurable via a package-level constant.
+> - Safely verified `result.Candidates` length before calling `result.Text()`.
+> 
+> **Next steps:** Waiting for Senior Dev review of Phase 3 (`/internal/ai/`).
 
 ---
 

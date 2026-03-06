@@ -102,7 +102,9 @@ This project will be built using an **Actor-Critic** methodology.
 
 4.  **Prompt Injection:** Construct a Gemini API payload combining the System Prompt, the lesson metadata (level/time), and the clipboard transcript.
 
-5.  Save the API response as a `.md` file in a local `/worksheets/` directory.
+5.  Save the API response as a `.md` file in a local `/worksheets/` directory. This directory must be added to `.gitignore` as it contains private student data.
+
+> _[CHANGELOG — 2026-03-06, Pre-Phase 3] Decision made with Junior Dev to git-ignore the `/worksheets/` directory. Generated worksheets contain private student lesson transcripts and AI-generated content specific to individual students. These must remain local-only and never be committed to version control._
 
 6.  **🛑 CHECKPOINT & REVIEW:** Pass `/internal/ai/` to the Senior Dev.
 

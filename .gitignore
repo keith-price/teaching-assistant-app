@@ -8,6 +8,9 @@ config/token.json
 # Local SQLite databases
 *.db
 
+# Worksheets
+/worksheets/
+
 # OS-specific
 .DS_Store
 
