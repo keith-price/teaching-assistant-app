@@ -1,5 +1,51 @@
 # Project Master Plan: Preply TUI Dashboard (Dual-Agent Protocol)
 
+## Role: Senior Developer (Main Chat)
+
+**Persona**: Architectural Overseer & Lead Reviewer.
+
+**Core Responsibility**: Strategic direction and rigorous code review.
+
+**Primary Tasks**:
+
+**Gatekeeping**: Review all Go code provided by the Junior. Check for proper error handling (if err != nil), goroutine leaks, and API credential safety.
+
+**Security & Privacy Auditor**: Verify that no PII (Personally Identifiable Information) or secrets are ever logged or accidentally included in version control.
+
+**Test Strategy Overseer**: Review the Junior's testing strategy to ensure adequate test coverage for critical paths before signing off.
+
+**Refactoring & Debt Management**: Proactively flag accumulated technical debt and messy code, suggesting refactoring before issues arise in later phases.
+
+**Final Authority**: You have the final say on all merges. A phase is not complete until you provide formalized "Sign-off" in the feedback document.
+
+**Problem Solving**: Only provide code snippets if the Junior is "stuck" or if a complex architectural shift is required.
+
+**Plan Maintenance**: Update PLAN.md to reflect completed milestones and adjust the roadmap for the remaining 50%.
+
+**Constraint**: Strictly No Coding. Your output should be critiques, logic flowcharts, or architectural advice unless explicitly "summoned" to fix a blocker.
+
+## Role: Junior Developer (CLI)
+
+**Persona**: Lead Implementer.
+
+**Core Responsibility**: Writing all functional Go code and maintaining the local database/API connections.
+
+**Primary Tasks**:
+
+**Test-Driven Implementer**: Write and execute unit tests _before_ submitting code to the Senior for review. Untested code submissions are a policy violation.
+
+**Execute the "Next Steps" in PLAN.md**.
+
+**Inline Documenter**: Write idiomatic Go documentation (doc comments for exported types/functions) while coding to streamline the Senior's review.
+
+**Environment Manager**: Maintain local \`.env\` files and meticulously manage \`.gitignore\` to prevent credential leaks.
+
+**Dependency Manager**: Manage \`go.mod\` and third-party libraries, proactively justifying their inclusion to the Senior.
+
+**Submit code to the Senior (user/main chat) for review before finalizing**.
+
+**Constraint**: Must explain the logic of new Go functions before writing them to ensure alignment with the Senior’s vision.
+
 ## 1. Project Overview
 
 **Goal:** Build a local, keyboard-navigated Terminal User Interface (TUI) application for managing daily ESL teaching workflows.
@@ -8,55 +54,55 @@
 
 ## 2. Tech Stack & Libraries
 
-* **Language:** Go (Golang)
+- **Language:** Go (Golang)
 
-* **UI Framework:** `github.com/charmbracelet/bubbletea`
+- **UI Framework:** `github.com/charmbracelet/bubbletea`
 
-* **Database:** `modernc.org/sqlite` (Local SQLite, pure Go — no CGO required)
+- **Database:** `modernc.org/sqlite` (Local SQLite, pure Go — no CGO required)
 
 > _[CHANGELOG — 2026-03-05, Post-Phase 1] Updated from `github.com/mattn/go-sqlite3` to `modernc.org/sqlite`. The pure-Go driver was chosen during Phase 1 implementation to eliminate the CGO/C compiler dependency, simplifying builds on all platforms. See `go.mod` for the actual dependency._
 
-* **Calendar API:** Official Google Calendar Go SDK
+- **Calendar API:** Official Google Calendar Go SDK
 
-* **AI Integration:** Official Google GenAI SDK for Go (Gemini API) & `github.com/joho/godotenv` (for secret management)
+- **AI Integration:** Official Google GenAI SDK for Go (Gemini API) & `github.com/joho/godotenv` (for secret management)
 
-* **Clipboard Management:** `github.com/atotto/clipboard`
+- **Clipboard Management:** `github.com/atotto/clipboard`
 
-* **WhatsApp API:** `go.mau.fi/whatsmeow`
+- **WhatsApp API:** `go.mau.fi/whatsmeow`
 
 ## 3. Core Architecture & Package Structure
 
 The app must be strictly separated into isolated packages to facilitate clean AI generation and review.
 
-* `/cmd/app/` - The main entry point.
+- `/cmd/app/` - The main entry point.
 
-* `/internal/db/` - SQLite connection, schema, and CRUD.
+- `/internal/db/` - SQLite connection, schema, and CRUD.
 
-* `/internal/calendar/` - Google Calendar OAuth and fetching.
+- `/internal/calendar/` - Google Calendar OAuth and fetching.
 
-* `/internal/tui/` - Bubble Tea models, views, and update loops.
+- `/internal/tui/` - Bubble Tea models, views, and update loops.
 
-* `/internal/ai/` - Gemini API calls, `.env` loading, and clipboard integration.
+- `/internal/ai/` - Gemini API calls, `.env` loading, and clipboard integration.
 
-* `/internal/notify/` - WhatsApp connection and scheduled messaging.
+- `/internal/notify/` - WhatsApp connection and scheduled messaging.
 
 ## 4. The Dual-Agent Workflow Protocol
 
 This project will be built using an **Actor-Critic** methodology.
 
-* **The Actor (Junior Dev):** The AI running *inside* the IDE. Responsible for writing the code, running local tests, and prompting the user for manual security steps.
+- **The Actor (Junior Dev):** The AI running _inside_ the IDE. Responsible for writing the code, running local tests, and prompting the user for manual security steps.
 
-* **The Critic (Senior Dev):** A separate AI instance running *outside* the IDE. Responsible for reviewing the code against Go best practices and generating a Markdown feedback report.
+- **The Critic (Senior Dev):** A separate AI instance running _outside_ the IDE. Responsible for reviewing the code against Go best practices and generating a Markdown feedback report.
 
 **The Loop:** For every Phase below, the Junior will build the feature. The Junior will ask the user to test it. The user will pass the code to the Senior for review. The Junior will implement the Senior's requested changes before moving to the next Phase.
 
 **Review Conventions:**
 
-* Senior Dev feedback reports are saved to `reviews/TASK_N_FEEDBACK.md` (e.g. `TASK_1_FEEDBACK.md`, `TASK_2_FEEDBACK.md`).
+- Senior Dev feedback reports are saved to `reviews/TASK_N_FEEDBACK.md` (e.g. `TASK_1_FEEDBACK.md`, `TASK_2_FEEDBACK.md`).
 
-* After implementing all review feedback, the Junior Dev adds a handoff note block at the end of the completed Phase in `PLAN.md`, summarising the changes made and confirming next steps.
+- After implementing all review feedback, the Junior Dev adds a handoff note block at the end of the completed Phase in `PLAN.md`, summarising the changes made and confirming next steps.
 
-* The Senior Dev re-reviews, runs tests, and appends a verification log to the feedback file before signing off.
+- The Senior Dev re-reviews, runs tests, and appends a verification log to the feedback file before signing off.
 
 > _[CHANGELOG — 2026-03-05, Post-Phase 2] Added review conventions section. The `reviews/` folder and `PLAN.md` handoff note patterns emerged naturally during Phases 1 and 2 and are now formalised here for consistency in future phases._
 
@@ -82,7 +128,7 @@ This project will be built using an **Actor-Critic** methodology.
 
 1.  Create `/internal/calendar/` and implement the OAuth2 flow.
 
-2.  **SECURITY PAUSE:** Junior Dev must stop and prompt the user: *"Please download your Google Calendar `credentials.json` and place it in the `config/` directory. Confirm it is ignored by git. Do not paste the contents here."* Wait for user confirmation.
+2.  **SECURITY PAUSE:** Junior Dev must stop and prompt the user: _"Please download your Google Calendar `credentials.json` and place it in the `config/` directory. Confirm it is ignored by git. Do not paste the contents here."_ Wait for user confirmation.
 
 > _[CHANGELOG — 2026-03-05, Post-Phase 2] Changed from "root folder" to "`config/` directory". Decision made during Phase 2 to keep the project root tidy. The `.gitignore` was updated to cover `config/credentials.json` and `config/token.json`._
 
@@ -96,7 +142,7 @@ This project will be built using an **Actor-Critic** methodology.
 
 1.  Create `/internal/ai/`.
 
-2.  **SECURITY PAUSE:** Junior Dev must implement `godotenv` to load environment variables, then stop and prompt the user: *"Please create a `.env` file in your root directory and add `GEMINI_API_KEY=your_actual_key_here`. Confirm it is ignored by git. Do not paste your key in this chat."* Wait for user confirmation.
+2.  **SECURITY PAUSE:** Junior Dev must implement `godotenv` to load environment variables, then stop and prompt the user: _"Please create a `.env` file in your root directory and add `GEMINI_API_KEY=your_actual_key_here`. Confirm it is ignored by git. Do not paste your key in this chat."_ Wait for user confirmation.
 
 3.  Implement `atotto/clipboard` to read raw transcripts from the OS clipboard.
 
@@ -124,9 +170,9 @@ This project will be built using an **Actor-Critic** methodology.
 
 1.  Create `/internal/notify/` using `whatsmeow`.
 
-2.  **SECURITY PAUSE:** Junior Dev must implement the terminal QR code login, save the session locally (ensure the session database is in `.gitignore`), and prompt the user: *"Please run the daemon and scan the QR code with your phone to authenticate."*
+2.  **SECURITY PAUSE:** Junior Dev must implement the terminal QR code login, save the session locally (ensure the session database is in `.gitignore`), and prompt the user: _"Please run the daemon and scan the QR code with your phone to authenticate."_
 
-3.  Create a formatting function that queries the DB and Calendar to build a text string: *"Good morning! Here is today's schedule..."*
+3.  Create a formatting function that queries the DB and Calendar to build a text string: _"Good morning! Here is today's schedule..."_
 
 4.  Implement a cron-like scheduler to trigger this message daily.
 
