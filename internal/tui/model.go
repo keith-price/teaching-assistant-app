@@ -5,9 +5,11 @@ import (
 	"teaching-assistant-app/internal/db"
 	"teaching-assistant-app/internal/drive"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 var (
@@ -36,6 +38,10 @@ type Model struct {
 
 	activePane int // 0 = Today, 1 = Tomorrow
 	cursor     int // Currently highlighted item in the active pane
+	
+	// Pagination state
+	viewportToday    int
+	viewportTomorrow int
 
 	width  int
 	height int
@@ -66,16 +72,26 @@ type Model struct {
 	showCreateFolder  bool               // Inline folder name input active
 	createFolderInput textinput.Model    // Text input for new folder name
 
+	// Progress states
+	spinner    spinner.Model
+	uploading  bool
+	generating bool
+
 	baseDir string
 }
 
 func NewModel(store *db.Store, generator *ai.Generator, driveClient *drive.Client, baseDir string) Model {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+
 	m := Model{
 		store:          store,
 		generator:      generator,
 		driveClient:    driveClient,
 		baseDir:        baseDir,
 		folderParentID: "root",
+		spinner:        s,
 	}
 
 	m.initForm()
@@ -113,5 +129,6 @@ func (m Model) Init() tea.Cmd {
 		textinput.Blink,
 		textarea.Blink,
 		fetchLessonsCmd(m.store),
+		m.spinner.Tick,
 	)
 }

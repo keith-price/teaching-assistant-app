@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -11,6 +12,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		cmds = append(cmds, cmd)
+
 	case tea.KeyMsg:
 		if m.showFolderPicker {
 			return m.handleFolderPickerKeys(msg)
@@ -47,6 +53,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case worksheetPreviewMsg:
+		m.generating = false
 		m.worksheetContent = msg.worksheet
 		m.teacherKeyContent = msg.teacherKey
 		m.showPreview = true
@@ -61,6 +68,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.showFolderPicker = true
 
 	case uploadCompleteMsg:
+		m.uploading = false
 		m.showFolderPicker = false
 		m.statusMsg = fmt.Sprintf("✅ Uploaded to Drive: %s", msg.folderName)
 
@@ -70,6 +78,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, listDriveFoldersCmd(m.driveClient, msg.parentID))
 
 	case errMsg:
+		m.generating = false
+		m.uploading = false
 		m.err = msg.err
 		m.statusMsg = fmt.Sprintf("❌ Error: %v", msg.err)
 	}
@@ -233,7 +243,8 @@ func (m Model) handleFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		lessonType := typeOptions[m.typeIndex]
 
 		m.showForm = false
-		m.statusMsg = "⏳ Generating worksheet..."
+		m.generating = true
+		m.statusMsg = "Generating worksheet..."
 		return m, generateWorksheetCmd(m.generator, level, duration, lessonType, text, title)
 	}
 
@@ -250,7 +261,9 @@ func (m Model) handlePreviewKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "y":
 		m.showPreview = false
-		m.statusMsg = "⏳ Loading Drive folders..."
+		m.folderParentID = "root"
+		m.folderPath = nil
+		m.statusMsg = "Loading Drive folders..."
 		return m, listDriveFoldersCmd(m.driveClient, "root")
 	case "n", "esc", "ctrl+c":
 		m.showPreview = false
@@ -268,7 +281,7 @@ func (m Model) handleFolderPickerKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			name := strings.TrimSpace(m.createFolderInput.Value())
 			if name != "" {
 				m.showCreateFolder = false
-				m.statusMsg = "⏳ Creating folder..."
+				m.statusMsg = "Creating folder..."
 				return m, createFolderCmd(m.driveClient, m.folderParentID, name)
 			}
 		case "esc", "ctrl+c":
@@ -297,7 +310,7 @@ func (m Model) handleFolderPickerKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			selectedFolder := m.folders[m.folderCursor]
 			m.folderPath = append(m.folderPath, folderBreadcrumb{id: m.folderParentID, name: selectedFolder.Name})
 			m.folderParentID = selectedFolder.ID
-			m.statusMsg = "⏳ Loading folder..."
+			m.statusMsg = "Loading folder..."
 			return m, listDriveFoldersCmd(m.driveClient, selectedFolder.ID)
 		}
 	case "backspace":
@@ -305,10 +318,10 @@ func (m Model) handleFolderPickerKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			last := m.folderPath[len(m.folderPath)-1]
 			m.folderPath = m.folderPath[:len(m.folderPath)-1]
 			m.folderParentID = last.id
-			m.statusMsg = "⏳ Loading folder..."
+			m.statusMsg = "Loading folder..."
 			return m, listDriveFoldersCmd(m.driveClient, m.folderParentID)
 		} else {
-			m.statusMsg = "⏳ Loading Drive folders..."
+			m.statusMsg = "Loading Drive folders..."
 			return m, listDriveFoldersCmd(m.driveClient, "root")
 		}
 	case "n":
@@ -332,8 +345,10 @@ func (m Model) handleFolderPickerKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			targetName = "current folder"
 		}
 
-		m.statusMsg = fmt.Sprintf("⏳ Creating subfolder and uploading to %s...", targetName)
-		return m, createSubfolderAndUploadCmd(m.driveClient, targetID, m.worksheetContent, m.teacherKeyContent, level, lessonType, title)
+		m.uploading = true
+		m.showFolderPicker = false
+		m.statusMsg = fmt.Sprintf("Creating subfolder and uploading to %s...", targetName)
+		return m, createSubfolderAndUploadCmd(m.driveClient, targetID, m.worksheetContent, m.teacherKeyContent, level, lessonType, title, m.baseDir)
 	}
 	return m, nil
 }
@@ -350,5 +365,24 @@ func (m *Model) boundCursor() {
 	}
 	if m.cursor > max {
 		m.cursor = max
+	}
+
+	maxVisible := m.height - 15
+	if maxVisible < 5 {
+		maxVisible = 5
+	}
+
+	if m.activePane == 0 {
+		if m.cursor < m.viewportToday {
+			m.viewportToday = m.cursor
+		} else if m.cursor >= m.viewportToday+maxVisible {
+			m.viewportToday = m.cursor - maxVisible + 1
+		}
+	} else {
+		if m.cursor < m.viewportTomorrow {
+			m.viewportTomorrow = m.cursor
+		} else if m.cursor >= m.viewportTomorrow+maxVisible {
+			m.viewportTomorrow = m.cursor - maxVisible + 1
+		}
 	}
 }

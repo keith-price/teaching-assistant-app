@@ -58,10 +58,10 @@ func constructPrompt(level, lessonTime, lessonType, sourceText, lessonTitle stri
 
 // Precompile regexes for robust matching
 var (
-	endStudentRegex   = regexp.MustCompile(`(?i)(?:#|\*|_|-|\s)*\[END STUDENT WORKSHEET\](?:#|\*|_|-|\s)*`)
-	beginTeacherRegex = regexp.MustCompile(`(?i)(?:#|\*|_|-|\s)*\[BEGIN TEACHER KEY\](?:#|\*|_|-|\s)*`)
-	endTeacherRegex   = regexp.MustCompile(`(?i)(?:#|\*|_|-|\s)*\[END TEACHER KEY\](?:#|\*|_|-|\s)*`)
-	beginStudentRegex = regexp.MustCompile(`(?i)(?:#|\*|_|-|\s)*\[BEGIN STUDENT WORKSHEET\](?:#|\*|_|-|\s)*`)
+	endStudentRegex   = regexp.MustCompile(`(?i)(?:#|\*|_|-|[ \t])*\[END STUDENT WORKSHEET\](?:#|\*|_|-|[ \t])*(?:\r?\n)?`)
+	beginTeacherRegex = regexp.MustCompile(`(?i)(?:#|\*|_|-|[ \t])*\[BEGIN TEACHER KEY\](?:#|\*|_|-|[ \t])*(?:\r?\n)?`)
+	endTeacherRegex   = regexp.MustCompile(`(?i)(?:#|\*|_|-|[ \t])*\[END TEACHER KEY\](?:#|\*|_|-|[ \t])*(?:\r?\n)?`)
+	beginStudentRegex = regexp.MustCompile(`(?i)(?:#|\*|_|-|[ \t])*\[BEGIN STUDENT WORKSHEET\](?:#|\*|_|-|[ \t])*(?:\r?\n)?`)
 )
 
 // splitResponse splits a Gemini response into the student worksheet and teacher's key

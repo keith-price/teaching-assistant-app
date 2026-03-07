@@ -181,22 +181,38 @@ _Ref: AGENTS.md > Phase 4_
 
 > **Junior Dev Handoff Note (Worksheet Split & Google Docs Upload Bug Fixes Complete):**
 > I have successfully diagnosed and fixed the bugs detailed in `TO-DO-SPLIT-AND-GDOCS.md`:
-> 
+>
 > - **Split Issue:** Gemini was occasionally wrapping responses in markdown code fences (` ```markdown `). I added a preprocessing step in `splitResponse` (`internal/ai/ai.go`) to strip these wrapping fences before applying the delimiter extraction. I also ensured the fallback extraction properly strips the `[BEGIN STUDENT WORKSHEET]` delimiter if present.
 > - **Google Docs Conversion:** Modified `UploadFile` in `internal/drive/drive.go` to strip the `.md` extension and set the `MimeType` to `application/vnd.google-apps.document`. This guarantees Google Drive automatically converts the markdown content into native, editable Google Docs upon upload.
 > - **Testing:** Added new test cases in `internal/ai/ai_test.go` to cover fenced delimiters, bold delimiters, and fallback behaviors. All tests pass and the project builds cleanly.
-> 
+>
 > **Next steps:** Handing off `internal/ai/ai.go`, `internal/ai/ai_test.go`, and `internal/drive/drive.go` to the Senior Dev for review before we proceed to Phase 5.
-> 
+>
 > **Junior Dev Handoff Note (Markdown to Google Docs Rich Text Conversion):**
 > Implemented the changes outlined in `TO-DO-GDOCS-FORMAT.md` to ensure worksheets uploaded to Google Drive are properly formatted as rich text.
-> 
+>
 > - **Dependency:** Added `github.com/gomarkdown/markdown` to handle robust in-memory Markdown-to-HTML conversion.
 > - **Logic Update:** Modified `UploadFile` in `internal/drive/drive.go` to convert the Markdown `content` to HTML bytes before upload.
 > - **API Integration:** Passed the HTML byte stream to the Google Drive `Media()` API and explicitly set the content type using `googleapi.ContentType("text/html")` to force the conversion.
 > - **Verification:** The application builds cleanly and `go test ./internal/drive/ -v` passes.
-> 
+>
 > **Next steps:** Keith, please run the app, generate a new worksheet, upload it to Drive, and verify that it opens as a formatted Google Doc (with bold text, headers, etc.). Once confirmed, please pass `internal/drive/drive.go` back to the Senior Dev for final review.
+
+> ✅ Phase 4 (UX Polish & Bug Fixes) **SIGNED OFF**.
+>
+> **What was reviewed:**
+>
+> - `internal/ai/ai.go` & `prompt.md` — Google Docs Formatting Fix (greedy regex and prompt constraints).
+> - `internal/drive/drive.go` — Google Docs List Spacing Fix (CSS injection).
+> - `internal/tui/update.go`, `view.go`, `commands.go` — Drive folder picker backspace fix, dual animated spinners, redundant emoji cleanup, local `worksheets/` directory cleanup, and TUI list pagination.
+>
+> **Verification results:**
+>
+> - `go test ./...` — ✅ all tests pass
+>
+> **Full review:** See `reviews/TASK_4_UX_FEEDBACK.md` for detailed notes.
+>
+> **Next steps:** Proceed to **Phase 5: The WhatsApp Daemon**.
 
 ---
 

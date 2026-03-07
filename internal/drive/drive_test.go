@@ -2,7 +2,10 @@ package drive
 
 import (
 	"context"
+	"strings"
 	"testing"
+
+	"github.com/gomarkdown/markdown"
 )
 
 // DriveUploader allows mocking of the Drive service in tests.
@@ -84,5 +87,24 @@ func TestMockCreateFolder(t *testing.T) {
 
 	if len(mock.folders) != 1 {
 		t.Errorf("expected 1 folder, got %d", len(mock.folders))
+	}
+}
+
+func TestMarkdownConversion(t *testing.T) {
+	content := "# Generic Title\n\n## Section 1\n\n- **Bold Item**: description\n- ________: a gap-fill item"
+	htmlBytes := markdown.ToHTML([]byte(content), nil, nil)
+	html := string(htmlBytes)
+
+	if !strings.Contains(html, "<h1>Generic Title</h1>") {
+		t.Errorf("Expected H1 tag for title, got: %s", html)
+	}
+	if !strings.Contains(html, "<h2>Section 1</h2>") {
+		t.Errorf("Expected H2 tag for section, got: %s", html)
+	}
+	if !strings.Contains(html, "<strong>Bold Item</strong>") {
+		t.Errorf("Expected strong tag for bold item, got: %s", html)
+	}
+	if !strings.Contains(html, "________:") {
+		t.Errorf("Expected gap-fill underscores to be preserved, got: %s", html)
 	}
 }

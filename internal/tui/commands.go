@@ -3,6 +3,8 @@ package tui
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -157,7 +159,7 @@ func createFolderCmd(driveClient *drive.Client, parentID, name string) tea.Cmd {
 	}
 }
 
-func createSubfolderAndUploadCmd(driveClient *drive.Client, parentID, worksheetContent, teacherKeyContent, level, lessonType, lessonTitle string) tea.Cmd {
+func createSubfolderAndUploadCmd(driveClient *drive.Client, parentID, worksheetContent, teacherKeyContent, level, lessonType, lessonTitle, baseDir string) tea.Cmd {
 	return func() tea.Msg {
 		if driveClient == nil {
 			return errMsg{fmt.Errorf("driveClient is nil")}
@@ -199,6 +201,20 @@ func createSubfolderAndUploadCmd(driveClient *drive.Client, parentID, worksheetC
 				return errMsg{fmt.Errorf("failed to upload teacher key: %w", err)}
 			}
 		}
+
+		// Cleanup local worksheets directory
+		if baseDir != "" {
+			worksheetsDir := filepath.Join(baseDir, "worksheets")
+			entries, err := os.ReadDir(worksheetsDir)
+			if err == nil {
+				for _, entry := range entries {
+					if !entry.IsDir() {
+						os.Remove(filepath.Join(worksheetsDir, entry.Name()))
+					}
+				}
+			}
+		}
+
 		return uploadCompleteMsg{folderName: subfolderName}
 	}
 }

@@ -83,8 +83,9 @@ func (c *Client) UploadFile(ctx context.Context, folderID, filename, content str
 		h1 { margin-top: 24pt; margin-bottom: 6pt; font-size: 20pt; }
 		h2 { margin-top: 18pt; margin-bottom: 6pt; font-size: 16pt; }
 		h3 { margin-top: 14pt; margin-bottom: 4pt; font-size: 14pt; }
-		ul, ol { margin-top: 6pt; margin-bottom: 12pt; }
-		li { margin-bottom: 4pt; line-height: 1.5; }
+		ul, ol { margin-top: 0; margin-bottom: 0; padding-left: 24pt; }
+		li { margin-bottom: 0; line-height: 1.5; }
+		li p { margin-bottom: 0; }
 	</style>
 </head>
 <body>

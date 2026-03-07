@@ -43,18 +43,28 @@ func (m Model) View() string {
 		return m.formView()
 	}
 
-	leftPane := m.renderPane("📅 Today", m.todayLessons, m.activePane == 0)
-	rightPane := m.renderPane("📅 Tomorrow", m.tomorrowLessons, m.activePane == 1)
+	maxVisible := m.height - 15
+	if maxVisible < 5 {
+		maxVisible = 5
+	}
+
+	leftPane := m.renderPane("📅 Today", m.todayLessons, m.activePane == 0, m.viewportToday, maxVisible)
+	rightPane := m.renderPane("📅 Tomorrow", m.tomorrowLessons, m.activePane == 1, m.viewportTomorrow, maxVisible)
 
 	panes := lipgloss.JoinHorizontal(lipgloss.Top, leftPane, rightPane)
 
-	status := statusStyle.Render(m.statusMsg)
+	statusText := m.statusMsg
+	if m.uploading || m.generating {
+		statusText = m.spinner.View() + " " + m.statusMsg
+	}
+	status := statusStyle.Render(statusText)
+	
 	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("↑/k: up • ↓/j: down • ←/h: left • →/l: right • tab: switch • v: toggle vocab • g: create worksheet • q: quit")
 
 	return lipgloss.JoinVertical(lipgloss.Left, panes, status, help)
 }
 
-func (m Model) renderPane(title string, lessons []LessonView, isActive bool) string {
+func (m Model) renderPane(title string, lessons []LessonView, isActive bool, viewportStart int, maxVisible int) string {
 	var b strings.Builder
 
 	b.WriteString(lipgloss.NewStyle().Bold(true).Render(title) + "\n\n")
@@ -62,7 +72,13 @@ func (m Model) renderPane(title string, lessons []LessonView, isActive bool) str
 	if len(lessons) == 0 {
 		b.WriteString(itemStyle.Render("No lessons scheduled."))
 	} else {
-		for i, lv := range lessons {
+		end := viewportStart + maxVisible
+		if end > len(lessons) {
+			end = len(lessons)
+		}
+		
+		for i := viewportStart; i < end; i++ {
+			lv := lessons[i]
 			cursor := " "
 			style := itemStyle
 			if isActive && i == m.cursor {
@@ -81,6 +97,10 @@ func (m Model) renderPane(title string, lessons []LessonView, isActive bool) str
 				cursor, timeStr, lv.Student.Name, lv.Student.Level, vocabStatus)
 
 			b.WriteString(style.Render(row) + "\n")
+		}
+		
+		if len(lessons) > maxVisible {
+			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(fmt.Sprintf("\n  Showing %d-%d of %d", viewportStart+1, end, len(lessons))))
 		}
 	}
 
@@ -191,7 +211,7 @@ func (m Model) folderPickerView() string {
 			}
 		}
 		
-		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("j/k: navigate • Enter: open folder • n: new folder • Space: upload here • Backspace: back • Esc: cancel"))
+		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("j/k: navigate • Enter: open folder • n: new folder • Space: upload here • Backspace: go up • Esc: cancel"))
 	}
 	
 	return boxStyle.Render(b.String())
