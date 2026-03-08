@@ -18,11 +18,6 @@ var (
 	durationOptions = []string{"50", "70", "90", "110"}
 )
 
-type LessonView struct {
-	Lesson  db.Lesson
-	Student db.Student
-}
-
 type folderBreadcrumb struct {
 	id   string
 	name string
@@ -33,8 +28,8 @@ type Model struct {
 	generator   *ai.Generator
 	driveClient *drive.Client
 
-	todayLessons    []LessonView
-	tomorrowLessons []LessonView
+	todayLessons    []db.LessonWithStudent
+	tomorrowLessons []db.LessonWithStudent
 
 	activePane int // 0 = Today, 1 = Tomorrow
 	cursor     int // Currently highlighted item in the active pane

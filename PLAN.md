@@ -220,12 +220,44 @@ _Ref: AGENTS.md > Phase 4_
 
 _Ref: AGENTS.md > Phase 5_
 
-- [ ] **Task 5.1:** Create `/internal/notify/` directory.
-- [ ] **Task 5.2:** Install `go.mau.fi/whatsmeow` dependency.
-- [ ] **Task 5.3:** **SECURITY PAUSE:** Implement terminal QR code login for `whatsmeow`. Ensure session database is git-ignored. Stop and prompt user to run daemon and scan QR code. _Wait for confirmation._
-- [ ] **Task 5.4:** Implement function to query DB and Calendar to format the daily message string ("Good morning! Here is today's schedule...").
-- [ ] **Task 5.5:** Implement cron-like scheduler to trigger the formatted message daily.
-- [ ] **Task 5.6:** **🛑 CHECKPOINT & REVIEW:** Hand off `/internal/notify/` to the Senior Dev for review. Implement requested changes before proceeding.
+- [x] **Task 5.1:** Create `/internal/notify/` directory.
+- [x] **Task 5.2:** Install `go.mau.fi/whatsmeow` dependency.
+- [x] **Task 5.3:** **SECURITY PAUSE:** Implement terminal QR code login for `whatsmeow`. Ensure session database is git-ignored. Stop and prompt user to run daemon and scan QR code. _Wait for confirmation._
+- [x] **Task 5.4:** Implement function to query DB and Calendar to format the daily message string ("Good morning! Here is today's schedule...").
+- [x] **Task 5.5:** Implement cron-like scheduler to trigger the formatted message daily.
+- [x] **Task 5.6:** **🛑 CHECKPOINT & REVIEW:** Hand off `/internal/notify/` to the Senior Dev for review. Implement requested changes before proceeding.
+
+> **Junior Dev Handoff Note (Phase 5 Complete):**
+> Phase 5 development is complete.
+> Key implementation details:
+>
+> - Created `internal/notify/whatsapp.go` to initialize the `whatsmeow` client, utilizing `modernc.org/sqlite` (pure Go) to avoid CGO dependencies.
+> - Session data is securely stored in `config/whatsapp_store.db` and properly git-ignored.
+> - Implemented an interactive terminal QR code login flow in `cmd/wa_test/main.go` which the user successfully authenticated.
+> - Created `internal/notify/scheduler.go` utilizing `github.com/robfig/cron/v3` for background scheduling.
+> - Implemented `BuildDailyScheduleMessage` which queries both the Google Calendar API and the local SQLite database to construct a formatted daily briefing.
+> - Configured the scheduler to send this briefing to the user's own WhatsApp number every morning at 7:00 AM WIB.
+>
+> **Next steps:** Waiting for Senior Dev review of Phase 5 (`internal/notify/`).
+
+> ✅ Phase 5 (The WhatsApp Daemon) **SIGNED OFF**.
+>
+> **What was reviewed:**
+>
+> - `internal/notify/whatsapp.go` — Proper init matching CGO-free requirements. Stores to `config/whatsapp_store.db`.
+> - `cmd/wa_test/main.go` — Terminal authentication script works.
+> - `internal/notify/scheduler.go` — Cron timing (WIB) and message generation correct.
+> - `internal/db/lessons.go` — Refactored `GetLessonsWithStudentByDateRange` resolves DRY violation between Scheduler and TUI.
+> - `internal/tui/commands.go` & `model.go` — Replaced duplicate hydration logic with the unified DB method.
+> - `.gitignore` — Successfully masks WhatsApp session store.
+>
+> **Verification results:**
+>
+> - `go test ./...` — ✅ all tests pass
+>
+> **Full review:** See `reviews/TASK_5_FEEDBACK.md` for detailed notes on the initial pass and the subsequent refactoring phase.
+>
+> **Next steps:** Proceed to **Phase 6: Final Integration**.
 
 ---
 

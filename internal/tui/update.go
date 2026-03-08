@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"teaching-assistant-app/internal/db"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -87,8 +89,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) getActiveLesson() *LessonView {
-	var list []LessonView
+func (m *Model) getActiveLesson() *db.LessonWithStudent {
+	var list []db.LessonWithStudent
 	if m.activePane == 0 {
 		list = m.todayLessons
 	} else {

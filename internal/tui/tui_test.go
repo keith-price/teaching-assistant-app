@@ -10,11 +10,11 @@ import (
 func TestModelInitAndNavigation(t *testing.T) {
 	m := NewModel(nil, nil, nil, "")
 
-	m.todayLessons = []LessonView{
+	m.todayLessons = []db.LessonWithStudent{
 		{Lesson: db.Lesson{ID: 1}, Student: db.Student{Name: "Alice"}},
 		{Lesson: db.Lesson{ID: 2}, Student: db.Student{Name: "Bob"}},
 	}
-	m.tomorrowLessons = []LessonView{
+	m.tomorrowLessons = []db.LessonWithStudent{
 		{Lesson: db.Lesson{ID: 3}, Student: db.Student{Name: "Charlie"}},
 	}
 
@@ -40,7 +40,7 @@ func TestModelInitAndNavigation(t *testing.T) {
 
 func TestToggleVocabUpdate(t *testing.T) {
 	m := NewModel(nil, nil, nil, "")
-	m.todayLessons = []LessonView{
+	m.todayLessons = []db.LessonWithStudent{
 		{Lesson: db.Lesson{ID: 1, VocabSent: false}, Student: db.Student{Name: "Alice"}},
 	}
 

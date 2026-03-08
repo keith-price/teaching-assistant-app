@@ -5,6 +5,9 @@
 config/credentials.json
 config/token.json
 
+# WhatsApp session store
+config/whatsapp_store.db*
+
 # Local SQLite databases
 *.db
 

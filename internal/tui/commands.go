@@ -17,8 +17,8 @@ import (
 
 // Messages
 type lessonsFetchedMsg struct {
-	today    []LessonView
-	tomorrow []LessonView
+	today    []db.LessonWithStudent
+	tomorrow []db.LessonWithStudent
 }
 type vocabToggledMsg struct {
 	lessonID int64
@@ -60,36 +60,17 @@ func fetchLessonsCmd(store *db.Store) tea.Cmd {
 		tomorrowStart := todayStart.AddDate(0, 0, 1)
 		dayAfterTomorrowStart := todayStart.AddDate(0, 0, 2)
 
-		todayLessons, err := store.GetLessonsByDateRange(todayStart, tomorrowStart)
+		todayLessons, err := store.GetLessonsWithStudentByDateRange(todayStart, tomorrowStart)
 		if err != nil {
 			return errMsg{fmt.Errorf("failed to fetch today's lessons: %w", err)}
 		}
 
-		tomorrowLessons, err := store.GetLessonsByDateRange(tomorrowStart, dayAfterTomorrowStart)
+		tomorrowLessons, err := store.GetLessonsWithStudentByDateRange(tomorrowStart, dayAfterTomorrowStart)
 		if err != nil {
 			return errMsg{fmt.Errorf("failed to fetch tomorrow's lessons: %w", err)}
 		}
 
-		// fetch student details for each
-		var todayViews []LessonView
-		for _, l := range todayLessons {
-			student, err := store.GetStudent(l.StudentID)
-			if err != nil || student == nil {
-				continue
-			}
-			todayViews = append(todayViews, LessonView{Lesson: l, Student: *student})
-		}
-
-		var tomorrowViews []LessonView
-		for _, l := range tomorrowLessons {
-			student, err := store.GetStudent(l.StudentID)
-			if err != nil || student == nil {
-				continue
-			}
-			tomorrowViews = append(tomorrowViews, LessonView{Lesson: l, Student: *student})
-		}
-
-		return lessonsFetchedMsg{today: todayViews, tomorrow: tomorrowViews}
+		return lessonsFetchedMsg{today: todayLessons, tomorrow: tomorrowLessons}
 	}
 }
 

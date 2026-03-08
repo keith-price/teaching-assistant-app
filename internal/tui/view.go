@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"teaching-assistant-app/internal/db"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -64,7 +66,7 @@ func (m Model) View() string {
 	return lipgloss.JoinVertical(lipgloss.Left, panes, status, help)
 }
 
-func (m Model) renderPane(title string, lessons []LessonView, isActive bool, viewportStart int, maxVisible int) string {
+func (m Model) renderPane(title string, lessons []db.LessonWithStudent, isActive bool, viewportStart int, maxVisible int) string {
 	var b strings.Builder
 
 	b.WriteString(lipgloss.NewStyle().Bold(true).Render(title) + "\n\n")

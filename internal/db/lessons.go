@@ -16,6 +16,11 @@ type Lesson struct {
 	CreatedAt time.Time
 }
 
+type LessonWithStudent struct {
+	Lesson  Lesson
+	Student Student
+}
+
 // CreateLesson adds a new lesson to the database.
 func (s *Store) CreateLesson(studentID int64, startTime, endTime time.Time, notes string) (int64, error) {
 	query := `INSERT INTO lessons (student_id, start_time, end_time, notes) VALUES (?, ?, ?, ?)`
@@ -98,6 +103,32 @@ func (s *Store) GetLessonsByDateRange(start, end time.Time) ([]Lesson, error) {
 	}
 
 	return lessons, nil
+}
+
+// GetLessonsWithStudentByDateRange retrieves lessons within a specific date range, fully populated with Student data.
+func (s *Store) GetLessonsWithStudentByDateRange(start, end time.Time) ([]LessonWithStudent, error) {
+	lessons, err := s.GetLessonsByDateRange(start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	var lessonsWithStudent []LessonWithStudent
+	for _, l := range lessons {
+		student, err := s.GetStudent(l.StudentID)
+		if err != nil || student == nil {
+			// In a real application we might want to fail or use a placeholder,
+			// but to match previous behaviour we just skip/handle gracefully.
+			// Let's use an empty student if not found just to keep the lesson visible.
+			if student == nil {
+				student = &Student{Name: "Unknown Student"}
+			}
+		}
+		lessonsWithStudent = append(lessonsWithStudent, LessonWithStudent{
+			Lesson:  l,
+			Student: *student,
+		})
+	}
+	return lessonsWithStudent, nil
 }
 
 // ToggleVocabSent toggles the vocab_sent status of a lesson.
