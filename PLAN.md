@@ -265,7 +265,57 @@ _Ref: AGENTS.md > Phase 5_
 
 _Ref: AGENTS.md > Core Architecture & Package Structure_
 
-- [ ] **Task 6.1:** Create `/cmd/app/main.go`.
-- [ ] **Task 6.2:** Wire up all packages (`db`, `calendar`, `tui`, `notify`) in `main.go`.
-- [ ] **Task 6.3:** Final end-to-end testing of the complete workflow.
-- [ ] **Task 6.4:** Final polish and clean up.
+- [x] **Task 6.1:** Create `/cmd/app/main.go`.
+- [x] **Task 6.2:** Wire up all packages (`db`, `calendar`, `tui`, `notify`) in `main.go`.
+- [x] **Task 6.3:** Final end-to-end testing of the complete workflow.
+- [x] **Task 6.4:** Final polish and clean up.
+
+> **Junior Dev Handoff Note (Phase 6 Complete):**
+> Phase 6 Final Integration is fully complete! I have created `cmd/app/main.go` and wired all systems together:
+>
+> - **Initialization:** Database, AI Generator, Shared Google Auth (Calendar + Drive), and WhatsApp are all booted.
+> - **Graceful Degradation:** If `GEMINI_API_KEY`, Google tokens, or WhatsApp sessions are missing, it will clearly log a warning to the console instructing the user to run the relevant auth scripts (`cmd/auth` or `cmd/wa_test`) rather than panicking.
+> - **Concurrency:** If the WhatsApp daemon successfully connects, the cron scheduler starts in the background. The Bubble Tea TUI program then takes over the foreground terminal correctly.
+> - **Shared Calendar Auth:** I added `NewClientWithHTTP` to `internal/calendar/calendar.go` to re-use the shared OAuth client initialized by `internal/auth`, passing it cleanly into both the TUI calendar queries and the background WhatsApp daemon.
+> - **Tests:** Everything builds cleanly (`go build ./...`) and all tests pass.
+>
+> The application is ready for final review and sign-off!
+
+> ✅ Phase 6 (Final Integration) **SIGNED OFF.**
+>
+> **What was reviewed:**
+>
+> - `cmd/app/main.go` — Wiring and initialization of all modules is completely correct and thread-safe.
+> - `internal/calendar/calendar.go` — `NewClientWithHTTP` safely accepts the shared OAuth HTTP client, preventing double-login attempts for Drive vs. Calendar.
+> - **Graceful degradation** is fully implemented. The TUI launches safely even if AI API keys or WA tokens are missing.
+> - **Background Daemon** — Evaluated `scheduler.Start()`. Does not block the TUI event loop.
+> - **Deferments** — Connections and the cron scheduler shut down gracefully when TUI exits.
+>
+> **Verification results:**
+>
+> - `go test ./...` — ✅ all tests pass
+> - `go build ./...` — ✅ compiles cleanly
+>
+> **Final Verdict:** The implementation matches the directives set forth in `AGENTS.md` perfectly. The codebase is clean, tested, follows pure Go constraints, and adheres to DRY principles.
+> **Final Verdict:** The implementation matches the directives set forth in `AGENTS.md` perfectly. The codebase is clean, tested, follows pure Go constraints, and adheres to DRY principles.
+>
+> The Preply TUI Dashboard project is officially considered **GOLD**. Amazing work!
+
+---
+
+## Phase 7: Daily Briefing Status Toggle
+
+_Ref: User Request (Post-Phase 6)_
+
+- [ ] **Task 7.1:** Add a new settings table to `internal/db/` to store app-wide configuration (key-value pairs).
+- [ ] **Task 7.2:** Implement `SetDailyBriefingSent` and `HasDailyBriefingBeenSent` methods on the database `Store` struct.
+- [ ] **Task 7.3:** Update `internal/tui/` to display the "Briefing Sent" status for the current day in the UI header/footer. It must automatically reset to `False` at midnight by checking against the current date in WIB.
+- [ ] **Task 7.4:** Add a TUI keyboard shortcut (e.g. `b`) to manually toggle the "Briefing Sent" state in the database.
+- [ ] **Task 7.5:** Modify `internal/notify/scheduler.go` to check `HasDailyBriefingBeenSent`. If False, send immediately on `Start()` as a catch-up (if past 7AM), and update the cron execution to also check state before sending.
+
+### Google Calendar Auto-Sync Requirements
+
+- [ ] **Task 7.6:** Update SQLite `lessons` table schema to include a `calendar_event_id TEXT UNIQUE` column to prevent duplicate syncs.
+- [ ] **Task 7.7:** Create a database method `SyncCalendarEvents(events []calendar.Event)` that inserts Google Calendar events as lessons (creating a generic fallback "Student" if none exist).
+- [ ] **Task 7.8:** Modify `cmd/app/main.go` (or `internal/tui/Init`) to trigger this sync automatically on application launch so the TUI populates seamlessly.
+- [ ] **Task 7.9:** **🛑 CHECKPOINT & REVIEW:** Hand off to the Senior Dev for review.

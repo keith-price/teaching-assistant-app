@@ -3,6 +3,7 @@ package calendar
 import (
 	"context"
 	"fmt"
+	nethttp "net/http"
 	"time"
 
 	"teaching-assistant-app/internal/auth"
@@ -39,6 +40,11 @@ func NewClient(ctx context.Context, credentialsFile, tokenFile string) (*Client,
 		return nil, fmt.Errorf("unable to get http client: %w", err)
 	}
 
+	return NewClientWithHTTP(ctx, httpClient)
+}
+
+// NewClientWithHTTP initializes the Google Calendar client with a pre-configured HTTP client.
+func NewClientWithHTTP(ctx context.Context, httpClient *nethttp.Client) (*Client, error) {
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(httpClient))
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve Calendar client: %w", err)

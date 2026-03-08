@@ -10,9 +10,9 @@ import (
 	"teaching-assistant-app/internal/db"
 
 	"github.com/robfig/cron/v3"
+	waProto "go.mau.fi/whatsmeow/binary/proto"
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
-	waProto "go.mau.fi/whatsmeow/binary/proto"
 )
 
 // Scheduler handles the automated messaging daemon.
@@ -139,7 +139,7 @@ func (s *Scheduler) BuildDailyScheduleMessage(ctx context.Context) (string, erro
 			if ls.Lesson.VocabSent {
 				vocabStatus = "✅ Vocab Sent"
 			}
-			
+
 			sb.WriteString(fmt.Sprintf("- %s: %s (%s)\n", ls.Lesson.StartTime.Format("15:04"), studentInfo, vocabStatus))
 		}
 	}

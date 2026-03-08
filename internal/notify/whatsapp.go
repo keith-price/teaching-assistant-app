@@ -29,7 +29,8 @@ func InitWhatsApp(dbPath string) (*WhatsAppClient, error) {
 		return nil, fmt.Errorf("failed to create directory for whatsapp store: %w", err)
 	}
 
-	dbLog := waLog.Stdout("Database", "DEBUG", true)
+	// Change to WARN level so it doesn't pollute the TUI
+	dbLog := waLog.Stdout("Database", "WARN", true)
 	// modernc.org/sqlite registers the driver name as "sqlite"
 	container, err := sqlstore.New(context.Background(), "sqlite", fmt.Sprintf("file:%s?_pragma=foreign_keys(1)", dbPath), dbLog)
 	if err != nil {
@@ -41,7 +42,7 @@ func InitWhatsApp(dbPath string) (*WhatsAppClient, error) {
 		return nil, fmt.Errorf("failed to get first device store: %w", err)
 	}
 
-	clientLog := waLog.Stdout("Client", "DEBUG", true)
+	clientLog := waLog.Stdout("Client", "WARN", true)
 	client := whatsmeow.NewClient(deviceStore, clientLog)
 
 	return &WhatsAppClient{
@@ -64,7 +65,7 @@ func (wa *WhatsAppClient) Authenticate() error {
 				qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, os.Stdout)
 				fmt.Println("Please scan the QR code above with your WhatsApp app.")
 			} else {
-				fmt.Println("Login event:", evt.Event)
+				// Silently ignore other login events in production
 			}
 		}
 	} else {
@@ -73,7 +74,7 @@ func (wa *WhatsAppClient) Authenticate() error {
 		if err != nil {
 			return fmt.Errorf("failed to connect: %w", err)
 		}
-		fmt.Println("WhatsApp client connected successfully.")
+		// Silently connected
 	}
 	return nil
 }
