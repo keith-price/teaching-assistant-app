@@ -297,25 +297,29 @@ _Ref: AGENTS.md > Core Architecture & Package Structure_
 > - `go build ./...` — ✅ compiles cleanly
 >
 > **Final Verdict:** The implementation matches the directives set forth in `AGENTS.md` perfectly. The codebase is clean, tested, follows pure Go constraints, and adheres to DRY principles.
-> **Final Verdict:** The implementation matches the directives set forth in `AGENTS.md` perfectly. The codebase is clean, tested, follows pure Go constraints, and adheres to DRY principles.
 >
 > The Preply TUI Dashboard project is officially considered **GOLD**. Amazing work!
 
 ---
 
-## Phase 7: Daily Briefing Status Toggle
+### Handoff: Pivot to Standalone Worksheet Generator
 
-_Ref: User Request (Post-Phase 6)_
+**To: Senior Developer**
+**From: Junior Developer**
 
-- [ ] **Task 7.1:** Add a new settings table to `internal/db/` to store app-wide configuration (key-value pairs).
-- [ ] **Task 7.2:** Implement `SetDailyBriefingSent` and `HasDailyBriefingBeenSent` methods on the database `Store` struct.
-- [ ] **Task 7.3:** Update `internal/tui/` to display the "Briefing Sent" status for the current day in the UI header/footer. It must automatically reset to `False` at midnight by checking against the current date in WIB.
-- [ ] **Task 7.4:** Add a TUI keyboard shortcut (e.g. `b`) to manually toggle the "Briefing Sent" state in the database.
-- [ ] **Task 7.5:** Modify `internal/notify/scheduler.go` to check `HasDailyBriefingBeenSent`. If False, send immediately on `Start()` as a catch-up (if past 7AM), and update the cron execution to also check state before sending.
+I have completed the refactoring steps outlined in `TO-DO.md` to pivot the application into a standalone Worksheet Generator.
 
-### Google Calendar Auto-Sync Requirements
+**Changes Made:**
+1. **The Purge:** Deleted `internal/calendar`, `internal/notify`, `internal/db`, and `cmd/wa_test`. Removed all `*.db` files.
+2. **Auth & Main Refactor:** Removed calendar scopes from auth. Stripped `cmd/app/main.go` of all DB/WhatsApp/Calendar/Cron initializations. The app now only initializes Google Drive auth and the AI Generator.
+3. **TUI Redesign:** Ripped out the split-pane schedule view and database list logic from `model.go`, `view.go`, `update.go`, and `commands.go`. The app now boots directly into the 5-field Worksheet input form (Title, Level, Type, Duration, Text) and transitions sequentially to the preview screen and Drive folder picker.
+4. **Tests & Dependencies:** Cleaned up `go.mod` via `go mod tidy` to remove unused dependencies (sqlite, whatsmeow, cron, calendar api). Removed outdated database-dependent tests in `tui_test.go` and verified all remaining tests in `internal/ai`, `internal/drive`, and `internal/tui` pass.
 
-- [ ] **Task 7.6:** Update SQLite `lessons` table schema to include a `calendar_event_id TEXT UNIQUE` column to prevent duplicate syncs.
-- [ ] **Task 7.7:** Create a database method `SyncCalendarEvents(events []calendar.Event)` that inserts Google Calendar events as lessons (creating a generic fallback "Student" if none exist).
-- [ ] **Task 7.8:** Modify `cmd/app/main.go` (or `internal/tui/Init`) to trigger this sync automatically on application launch so the TUI populates seamlessly.
-- [ ] **Task 7.9:** **🛑 CHECKPOINT & REVIEW:** Hand off to the Senior Dev for review.
+**Verification:**
+- `go mod tidy` run successfully.
+- `go build ./...` compiles without errors.
+- `go test ./...` passes for all remaining packages.
+
+**Constraint Met:** The application now operates strictly as a lightning-fast, single-purpose TUI for generating AI ESL Worksheets and saving them to Google Drive.
+
+Please review the commit and sign off on this pivot phase.

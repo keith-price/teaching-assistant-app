@@ -9,20 +9,12 @@ import (
 	"time"
 
 	"teaching-assistant-app/internal/ai"
-	"teaching-assistant-app/internal/db"
 	"teaching-assistant-app/internal/drive"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // Messages
-type lessonsFetchedMsg struct {
-	today    []db.LessonWithStudent
-	tomorrow []db.LessonWithStudent
-}
-type vocabToggledMsg struct {
-	lessonID int64
-}
 
 type worksheetPreviewMsg struct {
 	worksheet  string
@@ -47,44 +39,6 @@ type uploadCompleteMsg struct {
 
 type errMsg struct {
 	err error
-}
-
-func fetchLessonsCmd(store *db.Store) tea.Cmd {
-	return func() tea.Msg {
-		if store == nil {
-			return errMsg{fmt.Errorf("store is nil")}
-		}
-		loc := time.FixedZone("WIB", 7*3600)
-		now := time.Now().In(loc)
-		todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-		tomorrowStart := todayStart.AddDate(0, 0, 1)
-		dayAfterTomorrowStart := todayStart.AddDate(0, 0, 2)
-
-		todayLessons, err := store.GetLessonsWithStudentByDateRange(todayStart, tomorrowStart)
-		if err != nil {
-			return errMsg{fmt.Errorf("failed to fetch today's lessons: %w", err)}
-		}
-
-		tomorrowLessons, err := store.GetLessonsWithStudentByDateRange(tomorrowStart, dayAfterTomorrowStart)
-		if err != nil {
-			return errMsg{fmt.Errorf("failed to fetch tomorrow's lessons: %w", err)}
-		}
-
-		return lessonsFetchedMsg{today: todayLessons, tomorrow: tomorrowLessons}
-	}
-}
-
-func toggleVocabCmd(store *db.Store, lessonID int64) tea.Cmd {
-	return func() tea.Msg {
-		if store == nil {
-			return errMsg{fmt.Errorf("store is nil")}
-		}
-		err := store.ToggleVocabSent(lessonID)
-		if err != nil {
-			return errMsg{fmt.Errorf("failed to toggle vocab: %w", err)}
-		}
-		return vocabToggledMsg{lessonID}
-	}
 }
 
 func generateWorksheetCmd(generator *ai.Generator, level, duration, lessonType, sourceText, lessonTitle string) tea.Cmd {

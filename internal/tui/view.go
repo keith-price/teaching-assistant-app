@@ -4,21 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"teaching-assistant-app/internal/db"
-
 	"github.com/charmbracelet/lipgloss"
 )
 
 var (
-	paneStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("240")).
-			Padding(1, 2).
-			Width(50)
-
-	activePaneStyle = paneStyle.Copy().
-			BorderForeground(lipgloss.Color("62"))
-
 	cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
 	itemStyle   = lipgloss.NewStyle().PaddingLeft(2)
 
@@ -27,11 +16,11 @@ var (
 			MarginTop(1).
 			MarginBottom(1)
             
-    boxStyle = lipgloss.NewStyle().
+	boxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("62")).
 			Padding(1, 2).
-            Width(60)
+			Width(60)
 )
 
 func (m Model) View() string {
@@ -41,77 +30,8 @@ func (m Model) View() string {
 	if m.showPreview {
 		return m.previewView()
 	}
-	if m.showForm {
-		return m.formView()
-	}
-
-	maxVisible := m.height - 15
-	if maxVisible < 5 {
-		maxVisible = 5
-	}
-
-	leftPane := m.renderPane("📅 Today", m.todayLessons, m.activePane == 0, m.viewportToday, maxVisible)
-	rightPane := m.renderPane("📅 Tomorrow", m.tomorrowLessons, m.activePane == 1, m.viewportTomorrow, maxVisible)
-
-	panes := lipgloss.JoinHorizontal(lipgloss.Top, leftPane, rightPane)
-
-	statusText := m.statusMsg
-	if m.uploading || m.generating {
-		statusText = m.spinner.View() + " " + m.statusMsg
-	}
-	status := statusStyle.Render(statusText)
 	
-	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("↑/k: up • ↓/j: down • ←/h: left • →/l: right • tab: switch • v: toggle vocab • g: create worksheet • q: quit")
-
-	return lipgloss.JoinVertical(lipgloss.Left, panes, status, help)
-}
-
-func (m Model) renderPane(title string, lessons []db.LessonWithStudent, isActive bool, viewportStart int, maxVisible int) string {
-	var b strings.Builder
-
-	b.WriteString(lipgloss.NewStyle().Bold(true).Render(title) + "\n\n")
-
-	if len(lessons) == 0 {
-		b.WriteString(itemStyle.Render("No lessons scheduled."))
-	} else {
-		end := viewportStart + maxVisible
-		if end > len(lessons) {
-			end = len(lessons)
-		}
-		
-		for i := viewportStart; i < end; i++ {
-			lv := lessons[i]
-			cursor := " "
-			style := itemStyle
-			if isActive && i == m.cursor {
-				cursor = ">"
-				style = cursorStyle
-			}
-
-			vocabStatus := "⬜"
-			if lv.Lesson.VocabSent {
-				vocabStatus = "✅"
-			}
-
-			timeStr := lv.Lesson.StartTime.Format("15:04")
-
-			row := fmt.Sprintf("%s %s | %s | Lvl: %s | Vocab: %s",
-				cursor, timeStr, lv.Student.Name, lv.Student.Level, vocabStatus)
-
-			b.WriteString(style.Render(row) + "\n")
-		}
-		
-		if len(lessons) > maxVisible {
-			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(fmt.Sprintf("\n  Showing %d-%d of %d", viewportStart+1, end, len(lessons))))
-		}
-	}
-
-	style := paneStyle
-	if isActive {
-		style = activePaneStyle
-	}
-
-	return style.Render(b.String())
+	return m.formView()
 }
 
 func (m Model) formView() string {
@@ -154,7 +74,15 @@ func (m Model) formView() string {
 	}
 	b.WriteString(fmt.Sprintf("%s Source Text:\n%s\n", txtCursor, m.sourceTextArea.View()))
 
-	b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Tab/Shift+Tab: switch fields • ←/→: cycle options • Ctrl+S: submit • Esc: cancel"))
+	b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Tab/Shift+Tab: switch fields • ←/→: cycle options • Ctrl+S: submit • Ctrl+C: quit"))
+
+	statusText := m.statusMsg
+	if m.uploading || m.generating {
+		statusText = m.spinner.View() + " " + m.statusMsg
+	}
+	if statusText != "" {
+		b.WriteString("\n\n" + statusStyle.Render(statusText))
+	}
 
 	return boxStyle.Render(b.String())
 }
@@ -180,6 +108,14 @@ func (m Model) previewView() string {
 	
 	b.WriteString("\n\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("y: accept & upload to Drive • n: discard • Esc: cancel"))
 	
+	statusText := m.statusMsg
+	if m.uploading || m.generating {
+		statusText = m.spinner.View() + " " + m.statusMsg
+	}
+	if statusText != "" {
+		b.WriteString("\n\n" + statusStyle.Render(statusText))
+	}
+
 	return boxStyle.Render(b.String())
 }
 
@@ -197,7 +133,7 @@ func (m Model) folderPickerView() string {
 	if m.showCreateFolder {
 		b.WriteString("New folder name:\n")
 		b.WriteString(m.createFolderInput.View() + "\n")
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Enter: create • Esc: cancel"))
+		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Enter: create • Esc: cancel"))
 	} else {
 		if len(m.folders) == 0 {
 			b.WriteString("No subfolders. Press 'n' to create one.\n")
@@ -216,5 +152,13 @@ func (m Model) folderPickerView() string {
 		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("j/k: navigate • Enter: open folder • n: new folder • Space: upload here • Backspace: go up • Esc: cancel"))
 	}
 	
+	statusText := m.statusMsg
+	if m.uploading || m.generating {
+		statusText = m.spinner.View() + " " + m.statusMsg
+	}
+	if statusText != "" {
+		b.WriteString("\n\n" + statusStyle.Render(statusText))
+	}
+
 	return boxStyle.Render(b.String())
 }

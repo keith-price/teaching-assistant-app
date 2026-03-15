@@ -7,7 +7,6 @@ import (
 
 	"teaching-assistant-app/internal/auth"
 
-	"google.golang.org/api/calendar/v3"
 	driveAPI "google.golang.org/api/drive/v3"
 )
 
@@ -19,7 +18,6 @@ func main() {
 	err := auth.AuthorizeInteractively(ctx,
 		"config/credentials.json",
 		"config/token.json",
-		calendar.CalendarReadonlyScope,
 		driveAPI.DriveScope,
 	)
 	if err != nil {

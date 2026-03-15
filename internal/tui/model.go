@@ -2,7 +2,6 @@ package tui
 
 import (
 	"teaching-assistant-app/internal/ai"
-	"teaching-assistant-app/internal/db"
 	"teaching-assistant-app/internal/drive"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -24,19 +23,8 @@ type folderBreadcrumb struct {
 }
 
 type Model struct {
-	store       *db.Store
 	generator   *ai.Generator
 	driveClient *drive.Client
-
-	todayLessons    []db.LessonWithStudent
-	tomorrowLessons []db.LessonWithStudent
-
-	activePane int // 0 = Today, 1 = Tomorrow
-	cursor     int // Currently highlighted item in the active pane
-	
-	// Pagination state
-	viewportToday    int
-	viewportTomorrow int
 
 	width  int
 	height int
@@ -44,8 +32,7 @@ type Model struct {
 	statusMsg string
 	err       error
 
-	// 'G' key form state
-	showForm         bool
+	// Form state
 	lessonTitleInput textinput.Model
 	sourceTextArea   textarea.Model
 	levelIndex       int
@@ -75,13 +62,12 @@ type Model struct {
 	baseDir string
 }
 
-func NewModel(store *db.Store, generator *ai.Generator, driveClient *drive.Client, baseDir string) Model {
+func NewModel(generator *ai.Generator, driveClient *drive.Client, baseDir string) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	m := Model{
-		store:          store,
 		generator:      generator,
 		driveClient:    driveClient,
 		baseDir:        baseDir,
@@ -123,7 +109,6 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		textinput.Blink,
 		textarea.Blink,
-		fetchLessonsCmd(m.store),
 		m.spinner.Tick,
 	)
 }
